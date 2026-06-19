@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Font } from "@/lib/api";
+import { useLanguage } from "@/lib/i18n/useLanguage";
 import styles from "./FontCard.module.css";
 
 interface FontCardProps {
@@ -12,6 +13,7 @@ interface FontCardProps {
 }
 
 export default function FontCard({ font, previewText, fontSize }: FontCardProps) {
+  const { language, t } = useLanguage();
   const cardRef = useRef<HTMLDivElement>(null);
   const [isIntersected, setIsIntersected] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -67,9 +69,27 @@ export default function FontCard({ font, previewText, fontSize }: FontCardProps)
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleDownload = () => {
-    window.open(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/fonts/${font.slug}/download`);
+  const [showDownloadDropdown, setShowDownloadDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const triggerDownload = (format: string) => {
+    window.open(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/fonts/${font.slug}/download?format=${format}`);
+    setShowDownloadDropdown(false);
   };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDownloadDropdown(false);
+      }
+    };
+    if (showDownloadDropdown) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showDownloadDropdown]);
 
   return (
     <div ref={cardRef} className={styles.card}>
@@ -78,14 +98,24 @@ export default function FontCard({ font, previewText, fontSize }: FontCardProps)
           <div>
             <h2 className={styles.fontName}>{font.name}</h2>
             <div className={styles.metaInfo}>
-              <span className={styles.designer}>{font.designer || "نامعلوم ډيزاینر"}</span>
-              <span className={styles.badge}>{font.category?.name || "عام"}</span>
+              <span className={styles.designer}>
+                {font.designer || (language === "ps" ? "نامعلوم ډيزاینر" : "Unknown Designer")}
+              </span>
+              <span className={styles.badge}>
+                {font.category?.name || (language === "ps" ? "عام" : "General")}
+              </span>
             </div>
           </div>
           <div className={styles.tagGroup}>
-            {font.supportsPashto && <span className={styles.langBadge}>پښتو</span>}
-            {font.supportsUrdu && <span className={styles.langBadge}>اردو</span>}
-            {font.supportsArabic && <span className={styles.langBadge}>عربي</span>}
+            {font.supportsPashto && (
+              <span className={styles.langBadge}>{language === "ps" ? "پښتو" : "Pashto"}</span>
+            )}
+            {font.supportsUrdu && (
+              <span className={styles.langBadge}>{language === "ps" ? "اردو" : "Urdu"}</span>
+            )}
+            {font.supportsArabic && (
+              <span className={styles.langBadge}>{language === "ps" ? "عربي" : "Arabic"}</span>
+            )}
           </div>
         </div>
 
@@ -103,18 +133,41 @@ export default function FontCard({ font, previewText, fontSize }: FontCardProps)
 
       <div className={styles.footer}>
         <div className={styles.metaInfo}>
-          <span>{font.downloadCount} ډاونلوډونه</span>
+          <span>
+            {font.downloadCount} {language === "ps" ? "ډاونلوډونه" : "downloads"}
+          </span>
         </div>
         <div className={styles.btnGroup}>
           <Link href={`/fonts/${font.slug}`} className={styles.btn}>
-            تفصیل وګورئ
+            {t("fonts.detailsBtn")}
           </Link>
           <button className={styles.btn} onClick={handleCopyCss}>
-            {copied ? "کاپي شو!" : "کاپي CSS"}
+            {copied ? t("fontDetail.copied") : (language === "ps" ? "کاپي HTML" : "Copy HTML")}
           </button>
-          <button className={`${styles.btn} ${styles.btnPrimary}`} onClick={handleDownload}>
-            ډاونلوډ
-          </button>
+          <div ref={dropdownRef} className={styles.downloadWrapper}>
+            <button
+              className={`${styles.btn} ${styles.btnPrimary}`}
+              onClick={() => setShowDownloadDropdown(!showDownloadDropdown)}
+            >
+              {t("fonts.downloadBtn")} ▾
+            </button>
+            {showDownloadDropdown && (
+              <div className={styles.dropdownMenu}>
+                <button className={styles.dropdownItem} onClick={() => triggerDownload("zip")}>
+                  📦 {language === "ps" ? "بشپړ بسته (ZIP)" : "Complete Pack (ZIP)"}
+                </button>
+                <button className={styles.dropdownItem} onClick={() => triggerDownload("original")}>
+                  🔤 {language === "ps" ? "اصلي فونټ (TTF/OTF)" : "Original Font (TTF/OTF)"}
+                </button>
+                <button className={styles.dropdownItem} onClick={() => triggerDownload("woff2")}>
+                  🌐 {language === "ps" ? "ویب فونټ (WOFF2)" : "Web Font (WOFF2)"}
+                </button>
+                <button className={styles.dropdownItem} onClick={() => triggerDownload("css")}>
+                  🎨 {language === "ps" ? "سی ایس ایس (CSS)" : "CSS Stylesheet"}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

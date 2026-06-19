@@ -3,8 +3,10 @@
 import Header from "@/components/Header";
 import PreviewControls from "@/components/PreviewControls";
 import FontCatalog from "@/components/FontCatalog";
+import { useLanguage } from "@/lib/i18n/useLanguage";
 
 export default function FontsPage() {
+  const { language } = useLanguage();
   return (
     <>
       <Header />
@@ -20,7 +22,11 @@ export default function FontsPage() {
         fontSize: "0.85rem"
       }}>
         <div className="container">
-          <p>© 2026 پښتو فونټونه. خطونه د کلتور او هنر ښکلا ده.</p>
+          <p>
+            {language === "ps" 
+              ? "© 2026 پښتو فونټونه. خطونه د کلتور او هنر ښکلا ده." 
+              : "© 2026 Pashto Fonts. Typography is the elegance of culture and art."}
+          </p>
         </div>
       </footer>
     </>

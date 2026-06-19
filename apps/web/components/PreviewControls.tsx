@@ -3,9 +3,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { usePreviewState } from "@/hooks/usePreviewState";
 import { fetchCategories } from "@/lib/api";
+import { useLanguage } from "@/lib/i18n/useLanguage";
 import styles from "./PreviewControls.module.css";
 
 export default function PreviewControls() {
+  const { t } = useLanguage();
   const {
     previewText,
     fontSize,
@@ -37,7 +39,7 @@ export default function PreviewControls() {
           <div className={styles.searchWrapper}>
             <input
               type="text"
-              placeholder="د فونټ نوم وپلټئ..."
+              placeholder={t("fonts.searchPlaceholder")}
               className={styles.input}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -48,7 +50,7 @@ export default function PreviewControls() {
           <div className={styles.previewTextWrapper}>
             <input
               type="text"
-              placeholder="دلته خپل پښتو متن ولیکئ ترڅو فونټونه پکې وګورئ..."
+              placeholder={t("fonts.previewPlaceholder")}
               className={`${styles.input} ${styles.previewInput}`}
               value={previewText}
               onChange={(e) => setPreviewText(e.target.value)}
@@ -64,7 +66,7 @@ export default function PreviewControls() {
               value={category || ""}
               onChange={(e) => setCategory(e.target.value || null)}
             >
-              <option value="">ټول کټګورۍ</option>
+              <option value="">{t("fonts.categoryAll")}</option>
               {categories.map((cat) => (
                 <option key={cat.id} value={cat.slug}>
                   {cat.name}
@@ -78,7 +80,7 @@ export default function PreviewControls() {
               value={language || ""}
               onChange={(e) => setLanguage(e.target.value || null)}
             >
-              <option value="">ټولې ژبې</option>
+              <option value="">{t("fonts.languageAll")}</option>
               <option value="pashto">پښتو (Pashto)</option>
               <option value="urdu">اردو (Urdu)</option>
               <option value="arabic">عربي (Arabic)</option>
@@ -91,10 +93,10 @@ export default function PreviewControls() {
               value={sort}
               onChange={(e) => setSort(e.target.value)}
             >
-              <option value="popular">ترټولو مشهور</option>
-              <option value="downloads">ډیر ډاونلوډ شوي</option>
-              <option value="latest">نوي اضافه شوي</option>
-              <option value="name">الفبا (نوم)</option>
+              <option value="popular">{t("fonts.sortPopular")}</option>
+              <option value="downloads">{t("fonts.sortDownloads")}</option>
+              <option value="latest">{t("fonts.sortLatest")}</option>
+              <option value="name">{t("fonts.sortName")}</option>
             </select>
           </div>
 
@@ -114,7 +116,7 @@ export default function PreviewControls() {
 
             {/* Reset Button */}
             <button className={styles.resetBtn} onClick={resetAll}>
-              ↺ بیا تنظیمول
+              ↺ {t("common.reset")}
             </button>
           </div>
         </div>

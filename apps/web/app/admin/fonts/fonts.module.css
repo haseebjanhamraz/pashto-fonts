@@ -1,24 +1,62 @@
+/* ─── Layout ─────────────────────────────────────────────────── */
+
 .container {
   max-width: var(--max-width-container);
   margin: var(--spacing-2xl) auto;
-  padding: 0 var(--spacing-md);
+  padding: 0 var(--spacing-md) var(--spacing-3xl);
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
 }
 
+.loadingWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  gap: var(--spacing-md);
+  color: var(--color-text-muted);
+}
+
+.loadingSpinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ─── Header ─────────────────────────────────────────────────── */
+
 .headerRow {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-end;
   flex-wrap: wrap;
   gap: var(--spacing-md);
 }
+
+.backLink {
+  display: inline-block;
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.backLink:hover { color: var(--color-accent); }
 
 .title {
   font-size: 1.75rem;
   font-weight: 800;
   color: var(--color-text-primary);
+  line-height: 1.2;
 }
 
 .uploadBtn {
@@ -29,11 +67,100 @@
   font-weight: 700;
   font-size: 0.9rem;
   transition: background-color 0.2s;
+  white-space: nowrap;
 }
 
-.uploadBtn:hover {
-  background-color: var(--color-accent-hover);
+.uploadBtn:hover { background-color: var(--color-accent-hover); }
+
+/* ─── Toolbar ─────────────────────────────────────────────────── */
+
+.toolbar {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
+  flex-wrap: wrap;
 }
+
+.searchInput {
+  flex: 1;
+  min-width: 200px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-size: 0.9rem;
+  transition: border-color 0.2s;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.statusSelect {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-size: 0.9rem;
+  cursor: pointer;
+  min-width: 150px;
+}
+
+.statusSelect:focus { outline: none; border-color: var(--color-accent); }
+
+/* ─── Banners ─────────────────────────────────────────────────── */
+
+.errorBanner {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: #fef2f2;
+  border: 1px solid #fee2e2;
+  border-radius: var(--radius-md);
+  color: #991b1b;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.bulkBanner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  font-weight: 600;
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.bulksuccess {
+  background-color: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+}
+
+.bulkerror {
+  background-color: #fef2f2;
+  border: 1px solid #fee2e2;
+  color: #991b1b;
+}
+
+.bulkBannerClose {
+  font-size: 0.8rem;
+  color: inherit;
+  opacity: 0.6;
+  cursor: pointer;
+}
+
+.bulkBannerClose:hover { opacity: 1; }
+
+/* ─── Table ─────────────────────────────────────────────────── */
 
 .tableWrapper {
   background-color: var(--color-bg-primary);
@@ -46,71 +173,133 @@
 .table {
   width: 100%;
   border-collapse: collapse;
-  text-align: right; /* RTL alignment */
+  text-align: left;
 }
 
 .th {
   background-color: var(--color-bg-secondary);
   color: var(--color-text-secondary);
   font-weight: 700;
-  font-size: 0.85rem;
-  padding: var(--spacing-md);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: var(--spacing-sm) var(--spacing-md);
   border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+
+.thCheck {
+  width: 44px;
+  padding-inline: var(--spacing-sm);
 }
 
 .td {
-  padding: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
   border-bottom: 1px solid var(--color-border);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   color: var(--color-text-primary);
+  vertical-align: middle;
 }
+
+.tdCheck {
+  width: 44px;
+  padding-inline: var(--spacing-sm);
+}
+
+.rowSelected {
+  background-color: rgba(184, 0, 0, 0.04);
+}
+
+.rowSelected .td {
+  border-bottom-color: rgba(184, 0, 0, 0.1);
+}
+
+/* ─── Custom Checkbox ─────────────────────────────────────────── */
+
+.checkLabel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  width: 20px;
+  height: 20px;
+  margin: 0 auto;
+}
+
+.checkbox {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.checkmark {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-bg-primary);
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.checkbox:checked + .checkmark {
+  background-color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.checkbox:checked + .checkmark::after {
+  content: '';
+  display: block;
+  width: 5px;
+  height: 9px;
+  border: 2px solid white;
+  border-top: none;
+  border-left: none;
+  transform: rotate(45deg) translateY(-1px);
+}
+
+.checkLabel:hover .checkmark {
+  border-color: var(--color-accent);
+}
+
+/* ─── Font name cell ─────────────────────────────────────────── */
 
 .fontName {
   font-weight: 700;
   color: var(--color-text-primary);
 }
 
-.statusBadge {
+.featuredBadge {
   display: inline-block;
-  padding: 2px 8px;
-  border-radius: var(--radius-full);
-  font-size: 0.75rem;
-  font-weight: 700;
+  margin-inline-start: 6px;
+  font-size: 0.8rem;
+  color: #f59e0b;
 }
 
-.statusDRAFT {
-  background-color: #fef3c7;
-  color: #d97706;
-}
-
-.statusPROCESSING {
-  background-color: #dbeafe;
-  color: #2563eb;
-}
-
-.statusPUBLISHED {
-  background-color: #d1fae5;
-  color: #059669;
-}
-
-.statusERROR {
-  background-color: #fee2e2;
-  color: #dc2626;
-}
+/* ─── Row actions ─────────────────────────────────────────────── */
 
 .actions {
   display: flex;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs);
 }
 
 .actionBtn {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 600;
-  padding: var(--spacing-xs) var(--spacing-sm);
+  padding: 3px 10px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
-  transition: all 0.2s;
+  transition: all 0.15s;
   cursor: pointer;
+  white-space: nowrap;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  display: inline-block;
 }
 
 .actionBtn:hover {
@@ -118,29 +307,109 @@
   color: var(--color-accent);
 }
 
-.deleteBtn {
-  color: #dc2626;
-  border-color: #fee2e2;
+.deleteBtn { color: #dc2626; border-color: #fee2e2; }
+.deleteBtn:hover { background-color: #fef2f2; border-color: #dc2626; }
+
+/* ─── Status badge + quick-change dropdown ────────────────────── */
+
+.statusDropWrapper {
+  position: relative;
+  display: inline-block;
 }
 
-.deleteBtn:hover {
-  background-color: #fef2f2;
-  border-color: #dc2626;
-  color: #dc2626;
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.15s;
+  white-space: nowrap;
 }
+
+.statusBadge:hover { opacity: 0.85; }
+.statusSaving { opacity: 0.5; cursor: wait; }
+
+.statusCaret { font-size: 0.6rem; opacity: 0.7; }
+
+.statusDRAFT    { background-color: #fef3c7; color: #d97706; }
+.statusPROCESSING { background-color: #dbeafe; color: #2563eb; }
+.statusPUBLISHED  { background-color: #d1fae5; color: #059669; }
+.statusPRIVATE    { background-color: #f3f4f6; color: #6b7280; }
+.statusARCHIVED   { background-color: #e5e7eb; color: #4b5563; }
+.statusERROR      { background-color: #fee2e2; color: #dc2626; }
+
+.statusDropMenu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 100;
+  background-color: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  min-width: 140px;
+  overflow: hidden;
+  animation: fadeIn 0.1s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.statusDropItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--color-text-primary);
+  transition: background-color 0.1s;
+  text-align: left;
+}
+
+.statusDropItem:hover { background-color: var(--color-bg-secondary); }
+.statusDropActive { background-color: var(--color-bg-secondary); }
+
+/* status dot colors */
+.statusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dotDRAFT      { background-color: #d97706; }
+.dotPUBLISHED  { background-color: #059669; }
+.dotPRIVATE    { background-color: #6b7280; }
+.dotARCHIVED   { background-color: #9ca3af; }
+.dotERROR      { background-color: #dc2626; }
+.dotPROCESSING { background-color: #2563eb; }
+
+/* ─── Empty state ─────────────────────────────────────────────── */
 
 .emptyState {
   text-align: center;
   padding: var(--spacing-3xl) 0;
   color: var(--color-text-muted);
+  font-size: 0.95rem;
 }
+
+/* ─── Mini processing progress ────────────────────────────────── */
 
 .miniProgressContainer {
   display: flex;
   flex-direction: column;
   gap: 4px;
   width: 140px;
-  text-align: right;
 }
 
 .miniProgressBarWrapper {
@@ -150,7 +419,6 @@
   border: 1px solid var(--color-border);
   border-radius: 9999px;
   overflow: hidden;
-  position: relative;
 }
 
 .miniProgressBar {
@@ -164,18 +432,13 @@
 .miniProgressBar::after {
   content: '';
   position: absolute;
-  top: 0; left: 0; bottom: 0; right: 0;
+  inset: 0;
   background-image: linear-gradient(
-    -45deg, 
-    rgba(255, 255, 255, .15) 25%, 
-    transparent 25%, 
-    transparent 50%, 
-    rgba(255, 255, 255, .15) 50%, 
-    rgba(255, 255, 255, .15) 75%, 
-    transparent 75%, 
-    transparent
+    -45deg,
+    rgba(255, 255, 255, .15) 25%, transparent 25%,
+    transparent 50%, rgba(255, 255, 255, .15) 50%,
+    rgba(255, 255, 255, .15) 75%, transparent 75%, transparent
   );
-  z-index: 1;
   background-size: 20px 20px;
   animation: move-stripes-mini 1.5s linear infinite;
   border-radius: 9999px;
@@ -189,8 +452,8 @@
 .miniProgressMeta {
   display: flex;
   justify-content: space-between;
-  font-size: 0.75rem;
-  color: var(--color-text-secondary);
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
   gap: 4px;
 }
 
@@ -199,6 +462,136 @@
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 90px;
-  color: var(--color-text-muted);
 }
 
+/* ─── Floating Bulk Action Bar ────────────────────────────────── */
+
+.bulkBar {
+  position: fixed;
+  bottom: -80px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(900px, calc(100vw - 32px));
+  background-color: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+  padding: var(--spacing-sm) var(--spacing-md);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+  transition: bottom 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200;
+}
+
+.bulkBarVisible {
+  bottom: var(--spacing-lg);
+}
+
+.bulkBarLeft {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.bulkCount {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  padding: 2px 10px;
+  border-radius: 9999px;
+}
+
+.bulkClearBtn {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.bulkClearBtn:hover { color: var(--color-accent); }
+
+.bulkBarActions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+/* ─── Bulk action buttons ─────────────────────────────────────── */
+
+.bulkActionBtn {
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  white-space: nowrap;
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-secondary);
+  transition: all 0.15s;
+}
+
+.bulkActionBtn:hover:not(:disabled) {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.bulkActionBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.bulkDeleteBtn {
+  color: #dc2626;
+  border-color: #fee2e2;
+  background-color: #fff;
+}
+
+.bulkDeleteBtn:hover:not(:disabled) {
+  background-color: #fef2f2;
+  border-color: #dc2626;
+  color: #dc2626;
+}
+
+/* ─── Bulk status dropdown (in bulk bar) ──────────────────────── */
+
+.bulkDropWrapper {
+  position: relative;
+}
+
+.bulkDropMenu {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  z-index: 300;
+  background-color: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  min-width: 150px;
+  overflow: hidden;
+  animation: fadeIn 0.1s ease-out;
+}
+
+.bulkDropItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--color-text-primary);
+  transition: background-color 0.1s;
+  text-align: left;
+}
+
+.bulkDropItem:hover { background-color: var(--color-bg-secondary); }

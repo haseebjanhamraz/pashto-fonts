@@ -1,5 +1,5 @@
 .container {
-  max-width: 600px;
+  max-width: 720px;
   margin: var(--spacing-2xl) auto;
   padding: 0 var(--spacing-md);
 }
@@ -30,6 +30,8 @@
   font-size: 0.95rem;
   color: var(--color-text-muted);
 }
+
+/* ─── Dropzone ─────────────────────────────────── */
 
 .dropzone {
   border: 2px dashed var(--color-border);
@@ -64,43 +66,310 @@
   display: none;
 }
 
-.fileInfo {
+/* ─── File List ─────────────────────────────────── */
+
+.fileList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.fileListHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  padding-bottom: var(--spacing-xs);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.clearAllBtn {
+  font-size: 0.8rem;
+  color: var(--color-accent);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.clearAllBtn:hover {
+  text-decoration: underline;
+}
+
+/* ─── File Row ─────────────────────────────────── */
+
+.fileRow {
   background-color: var(--color-bg-secondary);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  padding: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: border-color 0.2s;
+}
+
+.fileRowTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.fileRowInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.fileRowRight {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-shrink: 0;
+}
+
+.fileName {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 340px;
+}
+
+.fileSize {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+/* ─── Status Badges ─────────────────────────────── */
+
+.badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+.badgeQueued {
+  background-color: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+}
+
+.badgeUploading {
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+}
+
+.badgeProcessing {
+  background-color: #fef9c3;
+  border: 1px solid #fde68a;
+  color: #92400e;
+}
+
+.badgeDone {
+  background-color: #ecfdf5;
+  border: 1px solid #d1fae5;
+  color: #065f46;
+}
+
+.badgeError {
+  background-color: #fef2f2;
+  border: 1px solid #fee2e2;
+  color: #991b1b;
+}
+
+.badgeDuplicate {
+  background-color: #fdf4ff;
+  border: 1px solid #e9d5ff;
+  color: #7e22ce;
+}
+
+/* ─── Row actions ─────────────────────────────── */
+
+.removeRowBtn {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.removeRowBtn:hover {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+.editRowBtn {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-accent);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.editRowBtn:hover {
+  text-decoration: underline;
+}
+
+/* ─── Row progress ─────────────────────────────── */
+
+.rowProgress {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rowError {
+  font-size: 0.78rem;
+  color: #991b1b;
+  margin: 0;
+}
+
+.rowDoneMsg {
+  font-size: 0.78rem;
+  color: #065f46;
+  margin: 0;
+}
+
+/* ─── Progress bar ─────────────────────────────── */
+
+.progressBarWrapper {
+  width: 100%;
+  height: 8px;
+  background-color: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: 9999px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progressBar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-accent) 0%, #ff4b4b 100%);
+  border-radius: 9999px;
+  transition: width 0.4s ease-out;
+  position: relative;
+}
+
+.progressBar::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; bottom: 0; right: 0;
+  background-image: linear-gradient(
+    -45deg,
+    rgba(255, 255, 255, .2) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(255, 255, 255, .2) 50%,
+    rgba(255, 255, 255, .2) 75%,
+    transparent 75%,
+    transparent
+  );
+  z-index: 1;
+  background-size: 30px 30px;
+  animation: move-stripes 2s linear infinite;
+  border-radius: 9999px;
+}
+
+@keyframes move-stripes {
+  0% { background-position: 0 0; }
+  100% { background-position: 30px 0; }
+}
+
+.progressMeta {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.fileName {
+.progressStep {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.progressEta {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
   font-weight: 600;
-  font-size: 0.95rem;
+}
+
+/* ─── Upload actions bar ─────────────────────────── */
+
+.uploadActions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.processingNote {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+/* ─── Batch summary ─────────────────────────────── */
+
+.batchSummary {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+  padding-top: var(--spacing-sm);
+  border-top: 1px solid var(--color-border);
+  margin-top: var(--spacing-xs);
+}
+
+.batchTitle {
+  font-weight: 700;
+  font-size: 0.9rem;
   color: var(--color-text-primary);
 }
 
-.fileSize {
-  font-size: 0.8rem;
-  color: var(--color-text-muted);
+.batchGood {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #065f46;
+  background-color: #ecfdf5;
+  border: 1px solid #d1fae5;
+  border-radius: 9999px;
+  padding: 2px 10px;
 }
 
-.removeBtn {
+.batchBad {
   font-size: 0.85rem;
-  color: var(--color-accent);
   font-weight: 600;
+  color: #991b1b;
+  background-color: #fef2f2;
+  border: 1px solid #fee2e2;
+  border-radius: 9999px;
+  padding: 2px 10px;
 }
+
+/* ─── Primary button ─────────────────────────────── */
 
 .btn {
   background-color: var(--color-accent);
   color: var(--color-text-on-accent);
-  padding: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
   border-radius: var(--radius-md);
   font-weight: 700;
   font-size: 1rem;
   text-align: center;
   cursor: pointer;
   transition: background-color 0.2s;
+  white-space: nowrap;
 }
 
 .btn:hover:not(:disabled) {
@@ -108,28 +377,11 @@
 }
 
 .btn:disabled {
-  opacity: 0.7;
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
-.statusMessage {
-  padding: var(--spacing-md);
-  border-radius: var(--radius-md);
-  font-size: 0.9rem;
-  font-weight: 500;
-}
-
-.success {
-  background-color: #ecfdf5;
-  border: 1px solid #d1fae5;
-  color: #065f46;
-}
-
-.error {
-  background-color: #fef2f2;
-  border: 1px solid #fee2e2;
-  color: #991b1b;
-}
+/* ─── Back button ─────────────────────────────────── */
 
 .backBtn {
   display: inline-flex;
@@ -144,124 +396,3 @@
 .backBtn:hover {
   color: var(--color-accent);
 }
-
-.progressContainer {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-md) 0;
-}
-
-.progressInfo {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.9rem;
-}
-
-.progressLabel {
-  font-weight: 600;
-  color: var(--color-text-primary);
-}
-
-.progressPercentage {
-  font-weight: 700;
-  color: var(--color-accent);
-}
-
-.progressBarWrapper {
-  width: 100%;
-  height: 12px;
-  background-color: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
-  border-radius: 9999px;
-  overflow: hidden;
-  position: relative;
-}
-
-.progressBar {
-  height: 100%;
-  background: linear-gradient(90deg, var(--color-accent) 0%, #ff4b4b 100%);
-  border-radius: 9999px;
-  transition: width 0.3s ease-out;
-  position: relative;
-}
-
-/* Striped animation for the progress bar */
-.progressBar::after {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; bottom: 0; right: 0;
-  background-image: linear-gradient(
-    -45deg, 
-    rgba(255, 255, 255, .15) 25%, 
-    transparent 25%, 
-    transparent 50%, 
-    rgba(255, 255, 255, .15) 50%, 
-    rgba(255, 255, 255, .15) 75%, 
-    transparent 75%, 
-    transparent
-  );
-  z-index: 1;
-  background-size: 40px 40px;
-  animation: move-stripes 2s linear infinite;
-  border-radius: 9999px;
-}
-
-@keyframes move-stripes {
-  0% { background-position: 0 0; }
-  100% { background-position: 40px 0; }
-}
-
-.progressStep {
-  font-size: 0.85rem;
-  color: var(--color-text-secondary);
-  font-weight: 500;
-}
-
-.progressEta {
-  font-size: 0.85rem;
-  color: var(--color-text-muted);
-}
-
-.progressMeta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 4px;
-}
-
-.successCard {
-  border: 1px solid #d1fae5;
-  background-color: #f0fdf4;
-  padding: var(--spacing-lg);
-  border-radius: var(--radius-md);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--spacing-md);
-  text-align: center;
-}
-
-.successIcon {
-  font-size: 3rem;
-  color: #10b981;
-}
-
-.successTitle {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #065f46;
-}
-
-.successDesc {
-  font-size: 0.9rem;
-  color: #047857;
-}
-
-.actionRow {
-  display: flex;
-  gap: var(--spacing-md);
-  width: 100%;
-}
-

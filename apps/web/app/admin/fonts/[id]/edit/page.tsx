@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import styles from "./edit.module.css";
+import { useLanguage } from "@/lib/i18n/useLanguage";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -17,6 +18,7 @@ export default function EditFontPage() {
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
+  const { t } = useLanguage();
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,7 +67,7 @@ export default function EditFontPage() {
 
         const fontData = await fontRes.json();
         if (!fontRes.ok || !fontData.success) {
-          throw new Error(fontData.error?.message || "Failed to load font details.");
+          throw new Error(fontData.error?.message || t("common.error"));
         }
 
         const font = fontData.data;
@@ -83,7 +85,7 @@ export default function EditFontPage() {
         setSupportsArabic(font.supportsArabic || false);
         setSupportsPersian(font.supportsPersian || false);
       } catch (err: any) {
-        setMessage({ type: "error", text: err.message || "Failed to load page data." });
+        setMessage({ type: "error", text: err.message || t("common.error") });
       } finally {
         setLoading(false);
       }
@@ -132,15 +134,15 @@ export default function EditFontPage() {
 
       const result = await res.json();
       if (!res.ok || !result.success) {
-        throw new Error(result.error?.message || "Failed to update font.");
+        throw new Error(result.error?.message || t("common.error"));
       }
 
-      setMessage({ type: "success", text: "فونټ په بریا سره نوی شو!" });
+      setMessage({ type: "success", text: t("adminEdit.successMsg") });
       setTimeout(() => {
         router.push("/admin/fonts");
       }, 1500);
     } catch (err: any) {
-      setMessage({ type: "error", text: err.message || "An error occurred." });
+      setMessage({ type: "error", text: err.message || t("common.error") });
     } finally {
       setSaving(false);
     }
@@ -149,7 +151,7 @@ export default function EditFontPage() {
   if (loading) {
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh" }}>
-        <h3>معلومات پورته کیږي...</h3>
+        <h3>{t("common.loading")}</h3>
       </div>
     );
   }
@@ -157,12 +159,12 @@ export default function EditFontPage() {
   return (
     <div className={styles.container}>
       <Link href="/admin/fonts" className={styles.backBtn}>
-        ← د فونټونو لیست ته بیرته تلل
+        {t("adminEdit.backToList")}
       </Link>
       
       <div className={styles.card}>
         <div className={styles.titleArea}>
-          <h1 className={styles.title}>د فونټ معلومات سمول</h1>
+          <h1 className={styles.title}>{t("adminEdit.title")}</h1>
         </div>
 
         {message && (
@@ -173,7 +175,7 @@ export default function EditFontPage() {
 
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.inputGroup}>
-            <label className={styles.label}>فونټ نوم (Name) *</label>
+            <label className={styles.label}>{t("adminEdit.inputName")}</label>
             <input
               type="text"
               className={styles.input}
@@ -184,7 +186,7 @@ export default function EditFontPage() {
           </div>
 
           <div className={styles.inputGroup}>
-            <label className={styles.label}>سلیګ (Slug) *</label>
+            <label className={styles.label}>{t("adminEdit.inputSlug")}</label>
             <input
               type="text"
               className={styles.input}
@@ -195,13 +197,13 @@ export default function EditFontPage() {
           </div>
 
           <div className={styles.inputGroup}>
-            <label className={styles.label}>کټګوري (Category)</label>
+            <label className={styles.label}>{t("adminEdit.inputCategory")}</label>
             <select
               className={styles.select}
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
             >
-              <option value="">کټګوري غوره کړئ</option>
+              <option value="">{t("adminEdit.selectCategoryDefault")}</option>
               {categories.map((cat) => (
                 <option key={cat.id} value={cat.id}>
                   {cat.name}
@@ -211,7 +213,7 @@ export default function EditFontPage() {
           </div>
 
           <div className={styles.inputGroup}>
-            <label className={styles.label}>ډیزاینر (Designer)</label>
+            <label className={styles.label}>{t("adminEdit.inputDesigner")}</label>
             <input
               type="text"
               className={styles.input}
@@ -221,7 +223,7 @@ export default function EditFontPage() {
           </div>
 
           <div className={styles.inputGroup}>
-            <label className={styles.label}>خپرونکی (Publisher)</label>
+            <label className={styles.label}>{t("adminEdit.inputPublisher")}</label>
             <input
               type="text"
               className={styles.input}
@@ -231,7 +233,7 @@ export default function EditFontPage() {
           </div>
 
           <div className={styles.inputGroup}>
-            <label className={styles.label}>سرچینه URL (Source URL)</label>
+            <label className={styles.label}>{t("adminEdit.inputSourceUrl")}</label>
             <input
               type="url"
               className={styles.input}
@@ -241,7 +243,7 @@ export default function EditFontPage() {
           </div>
 
           <div className={styles.inputGroup}>
-            <label className={styles.label}>تفصیل (Description)</label>
+            <label className={styles.label}>{t("adminEdit.inputDescription")}</label>
             <textarea
               className={`${styles.input} ${styles.textarea}`}
               value={description}
@@ -250,7 +252,7 @@ export default function EditFontPage() {
           </div>
 
           <div className={styles.inputGroup}>
-            <label className={styles.label}>حالت (Status)</label>
+            <label className={styles.label}>{t("adminEdit.inputStatus")}</label>
             <select
               className={styles.select}
               value={status}
@@ -274,7 +276,7 @@ export default function EditFontPage() {
               onChange={(e) => setIsFeatured(e.target.checked)}
             />
             <label htmlFor="isFeatured" className={styles.label} style={{ cursor: "pointer" }}>
-              دا فونټ ځانګړی (Featured) کړئ
+              {t("adminEdit.checkFeatured")}
             </label>
           </div>
 
@@ -287,7 +289,7 @@ export default function EditFontPage() {
               onChange={(e) => setSupportsPashto(e.target.checked)}
             />
             <label htmlFor="supportsPashto" className={styles.label} style={{ cursor: "pointer" }}>
-              پښتو (Pashto) ملاتړ
+              {t("adminEdit.checkPashto")}
             </label>
           </div>
 
@@ -300,7 +302,7 @@ export default function EditFontPage() {
               onChange={(e) => setSupportsUrdu(e.target.checked)}
             />
             <label htmlFor="supportsUrdu" className={styles.label} style={{ cursor: "pointer" }}>
-              اردو (Urdu) ملاتړ
+              {t("adminEdit.checkUrdu")}
             </label>
           </div>
 
@@ -313,7 +315,7 @@ export default function EditFontPage() {
               onChange={(e) => setSupportsArabic(e.target.checked)}
             />
             <label htmlFor="supportsArabic" className={styles.label} style={{ cursor: "pointer" }}>
-              عربي (Arabic) ملاتړ
+              {t("adminEdit.checkArabic")}
             </label>
           </div>
 
@@ -326,7 +328,7 @@ export default function EditFontPage() {
               onChange={(e) => setSupportsPersian(e.target.checked)}
             />
             <label htmlFor="supportsPersian" className={styles.label} style={{ cursor: "pointer" }}>
-              فارسي (Persian) ملاتړ
+              {t("adminEdit.checkPersian")}
             </label>
           </div>
 
@@ -336,14 +338,14 @@ export default function EditFontPage() {
               className={`${styles.btn} ${styles.btnPrimary}`}
               disabled={saving}
             >
-              {saving ? "خوندي کیږي..." : "خوندي کول (Save)"}
+              {saving ? t("adminEdit.btnSaving") : t("adminEdit.btnSave")}
             </button>
             <Link
               href="/admin/fonts"
               className={`${styles.btn} ${styles.btnSecondary}`}
               style={{ textDecoration: "none" }}
             >
-              لغوه کول (Cancel)
+              {t("adminEdit.btnCancel")}
             </Link>
           </div>
         </form>

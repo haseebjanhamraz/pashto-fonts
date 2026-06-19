@@ -3,11 +3,13 @@
 import { useState, FormEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useLanguage } from "@/lib/i18n/useLanguage";
 import styles from "./login.module.css";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 export default function AdminLoginPage() {
+  const { t } = useLanguage();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -58,8 +60,8 @@ export default function AdminLoginPage() {
     <main className={styles.container}>
       <div className={styles.card}>
         <div className={styles.titleArea}>
-          <h1 className={styles.title}>اداري ننوتنه</h1>
-          <p className={styles.desc}>پښتو فونټونو اداري تختې ته دننه شئ.</p>
+          <h1 className={styles.title}>{t("adminLogin.title")}</h1>
+          <p className={styles.desc}>{t("adminLogin.subtitle")}</p>
         </div>
 
         {error && <div className={styles.errorBox}>{error}</div>}
@@ -67,7 +69,7 @@ export default function AdminLoginPage() {
         <form className={styles.form} onSubmit={handleSubmit}>
           <div className={styles.inputGroup}>
             <label className={styles.label} htmlFor="email">
-              بریښنالیک پته (Email Address)
+              {t("adminLogin.email")}
             </label>
             <input
               type="email"
@@ -82,7 +84,7 @@ export default function AdminLoginPage() {
 
           <div className={styles.inputGroup}>
             <label className={styles.label} htmlFor="password">
-              پټ نوم (Password)
+              {t("adminLogin.password")}
             </label>
             <input
               type="password"
@@ -96,12 +98,12 @@ export default function AdminLoginPage() {
           </div>
 
           <button type="submit" className={styles.submitBtn} disabled={loading}>
-            {loading ? "ننوتل..." : "تختې ته ننوتل"}
+            {loading ? t("adminLogin.btnLoading") : t("adminLogin.btn")}
           </button>
         </form>
 
         <Link href="/" className={styles.backHome}>
-          ← بیرته اصلي پاڼې ته
+          {t("adminLogin.backHome")}
         </Link>
       </div>
     </main>

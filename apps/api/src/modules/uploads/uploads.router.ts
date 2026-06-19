@@ -3,6 +3,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { z } from "zod";
+import crypto from "crypto";
 import { requireAdmin, AuthenticatedRequest } from "../auth/auth.middleware";
 import { prisma } from "../../utils/db";
 import { fontProcessingQueue } from "../../utils/queue";
@@ -49,7 +50,7 @@ const upload = multer({
   limits: {
     fileSize: limitMb * 1024 * 1024, // conversion to bytes
   },
-}).single("fontFile");
+}).array("fontFiles", 20);
 
 // Helper to generate a basic slug
 function slugify(text: string) {
@@ -64,14 +65,14 @@ function slugify(text: string) {
 }
 
 // POST /api/admin/fonts/upload
-router.post("/upload", requireAdmin, rateLimiter(10, 60), (req: AuthenticatedRequest, res: Response) => {
+router.post("/upload", requireAdmin, rateLimiter(30, 60), (req: AuthenticatedRequest, res: Response) => {
   upload(req, res, async (err: any) => {
     if (err instanceof multer.MulterError) {
       return res.status(400).json({
         success: false,
         error: {
           code: "UPLOAD_TOO_LARGE",
-          message: `File size exceeds the limit of ${limitMb}MB.`,
+          message: `File size exceeds the limit of ${limitMb}MB per file.`,
         },
       });
     } else if (err) {
@@ -84,74 +85,200 @@ router.post("/upload", requireAdmin, rateLimiter(10, 60), (req: AuthenticatedReq
       });
     }
 
-    if (!req.file) {
+    const files = req.files as Express.Multer.File[];
+
+    if (!files || files.length === 0) {
       return res.status(400).json({
         success: false,
         error: {
           code: "UPLOAD_NO_FILE",
-          message: "No file was uploaded.",
+          message: "No files were uploaded.",
         },
       });
     }
 
-    try {
-      const originalName = req.file.originalname;
-      const baseName = path.parse(originalName).name;
-      
-      // Clean name for placeholder (e.g. "bahij-titr-bold" -> "Bahij Titr Bold")
-      const fontName = baseName
-        .split("-")
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(" ");
+    // Process each file independently — return per-file result array
+    const results: Array<{
+      originalName: string;
+      success: boolean;
+      data?: { id: string; name: string; slug: string; status: string; jobId: string | undefined };
+      error?: { code: string; message: string };
+    }> = [];
 
-      const uniqueSuffix = Date.now().toString().slice(-4);
-      const slug = `${slugify(baseName)}-${uniqueSuffix}`;
+    for (const file of files) {
+      try {
+        // Calculate SHA-256 Checksum
+        const fileBuffer = fs.readFileSync(file.path);
+        const checksum = crypto.createHash("sha256").update(fileBuffer).digest("hex");
 
-      // Create PROCESSING font record
-      const font = await prisma.font.create({
-        data: {
-          name: fontName,
-          slug,
-          status: FontStatus.PROCESSING,
-          license: "Open Source",
-        },
-      });
+        // Check for exact duplicate
+        const existingFile = await prisma.fontFile.findFirst({
+          where: { checksum },
+          include: { font: true },
+        });
 
-      // Dispatch processing job to BullMQ
-      const job = await fontProcessingQueue.add("process-font", {
-        fontId: font.id,
-        filePath: req.file.path,
-        originalFilename: req.file.filename,
-      });
+        if (existingFile) {
+          if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+          results.push({
+            originalName: file.originalname,
+            success: false,
+            error: {
+              code: "DUPLICATE_FONT_FILE",
+              message: `Duplicate: already uploaded as "${existingFile.font.name}".`,
+            },
+          });
+          continue;
+        }
 
-      console.log(`[Upload] Font record ${font.id} created, job ${job.id} dispatched.`);
+        const originalName = file.originalname;
+        const baseName = path.parse(originalName).name;
 
-      return res.status(201).json({
-        success: true,
-        data: {
-          id: font.id,
-          name: font.name,
-          slug: font.slug,
-          status: font.status,
-          jobId: job.id,
-        },
-      });
-    } catch (error) {
-      console.error("[Upload] Error saving font record:", error);
-      // Clean up uploaded file in case of DB failure
-      if (req.file && fs.existsSync(req.file.path)) {
-        fs.unlinkSync(req.file.path);
+        // Clean name for placeholder (e.g. "bahij-titr-bold" -> "Bahij Titr Bold")
+        const fontName = baseName
+          .split(/[-_]/)
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(" ");
+
+        const uniqueSuffix = Date.now().toString().slice(-4);
+        const slug = `${slugify(baseName)}-${uniqueSuffix}`;
+
+        // Create PROCESSING font record
+        const font = await prisma.font.create({
+          data: {
+            name: fontName,
+            slug,
+            status: FontStatus.PROCESSING,
+            license: "Open Source",
+          },
+        });
+
+        // Dispatch processing job to BullMQ
+        const job = await fontProcessingQueue.add("process-font", {
+          fontId: font.id,
+          filePath: file.path,
+          originalFilename: file.filename,
+        });
+
+        console.log(`[Upload] Font record ${font.id} created, job ${job.id} dispatched.`);
+
+        results.push({
+          originalName: file.originalname,
+          success: true,
+          data: {
+            id: font.id,
+            name: font.name,
+            slug: font.slug,
+            status: font.status,
+            jobId: job.id?.toString(),
+          },
+        });
+      } catch (error) {
+        console.error(`[Upload] Error processing file ${file.originalname}:`, error);
+        if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+        results.push({
+          originalName: file.originalname,
+          success: false,
+          error: {
+            code: "INTERNAL_ERROR",
+            message: "An internal server error occurred while registering this font.",
+          },
+        });
       }
+    }
 
-      return res.status(500).json({
-        success: false,
-        error: {
-          code: "INTERNAL_ERROR",
-          message: "An internal server error occurred while registering the uploaded font.",
-        },
+    const allFailed = results.every((r) => !r.success);
+    return res.status(allFailed ? 400 : 201).json({
+      success: !allFailed,
+      data: results,
+    });
+  });
+});
+
+// Zod schema for bulk operations
+const bulkActionSchema = z.object({
+  ids: z.array(z.string().cuid()).min(1, "At least one font ID is required."),
+  action: z.enum(["set-status", "set-featured", "delete"]),
+  payload: z
+    .object({
+      status: z
+        .enum(["DRAFT", "PROCESSING", "PUBLISHED", "PRIVATE", "ARCHIVED", "ERROR"])
+        .optional(),
+      isFeatured: z.boolean().optional(),
+    })
+    .optional(),
+});
+
+// PATCH /api/admin/fonts/bulk — Bulk update or delete
+router.patch("/bulk", requireAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  const parsed = bulkActionSchema.safeParse(req.body);
+
+  if (!parsed.success) {
+    return res.status(400).json({
+      success: false,
+      error: {
+        code: "VALIDATION_ERROR",
+        message: "Invalid bulk action payload.",
+        details: parsed.error.format(),
+      },
+    });
+  }
+
+  const { ids, action, payload } = parsed.data;
+
+  try {
+    if (action === "delete") {
+      const deleted = await prisma.font.deleteMany({ where: { id: { in: ids } } });
+      return res.status(200).json({
+        success: true,
+        data: { updated: deleted.count, failed: ids.length - deleted.count },
       });
     }
-  });
+
+    if (action === "set-status") {
+      if (!payload?.status) {
+        return res.status(400).json({
+          success: false,
+          error: { code: "MISSING_PAYLOAD", message: "payload.status is required for set-status action." },
+        });
+      }
+      const updated = await prisma.font.updateMany({
+        where: { id: { in: ids } },
+        data: { status: payload.status as FontStatus },
+      });
+      return res.status(200).json({
+        success: true,
+        data: { updated: updated.count, failed: ids.length - updated.count },
+      });
+    }
+
+    if (action === "set-featured") {
+      if (payload?.isFeatured === undefined) {
+        return res.status(400).json({
+          success: false,
+          error: { code: "MISSING_PAYLOAD", message: "payload.isFeatured is required for set-featured action." },
+        });
+      }
+      const updated = await prisma.font.updateMany({
+        where: { id: { in: ids } },
+        data: { isFeatured: payload.isFeatured },
+      });
+      return res.status(200).json({
+        success: true,
+        data: { updated: updated.count, failed: ids.length - updated.count },
+      });
+    }
+
+    return res.status(400).json({
+      success: false,
+      error: { code: "UNKNOWN_ACTION", message: "Unknown bulk action." },
+    });
+  } catch (error) {
+    console.error("[AdminFonts] Bulk operation error:", error);
+    return res.status(500).json({
+      success: false,
+      error: { code: "INTERNAL_ERROR", message: "Bulk operation failed." },
+    });
+  }
 });
 
 // Zod schema for updating font metadata

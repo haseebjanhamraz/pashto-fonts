@@ -1,163 +1,207 @@
 "use client";
 
-import { useState, useRef, DragEvent, ChangeEvent, useEffect } from "react";
+import { useState, useRef, DragEvent, ChangeEvent, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import styles from "./upload.module.css";
+import { useLanguage } from "@/lib/i18n/useLanguage";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+
+type FileStatus =
+  | "queued"
+  | "uploading"
+  | "processing"
+  | "done"
+  | "error"
+  | "duplicate";
+
+interface UploadEntry {
+  id: string; // local UUID for react key
+  file: File;
+  status: FileStatus;
+  fontId?: string;
+  fontName?: string;
+  fontSlug?: string;
+  progress: number;
+  eta: number;
+  stepMessage: string;
+  errorMessage?: string;
+}
+
+function generateId() {
+  return Math.random().toString(36).slice(2, 10);
+}
 
 export default function AdminFontUploadPage() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
-  const [file, setFile] = useState<File | null>(null);
-  const [isDragActive, setIsDragActive] = useState(false);
-  const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
-  const [loading, setLoading] = useState(false);
+  const { language, t } = useLanguage();
 
-  // Real-time font processing status states
-  const [processingFontId, setProcessingFontId] = useState<string | null>(null);
-  const [processingFontName, setProcessingFontName] = useState<string>("");
-  const [progress, setProgress] = useState<number>(0);
-  const [eta, setEta] = useState<number>(0);
-  const [stepMessage, setStepMessage] = useState<string>("");
-  const [processingStatus, setProcessingStatus] = useState<string>("");
+  const [entries, setEntries] = useState<UploadEntry[]>([]);
+  const [isDragActive, setIsDragActive] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [batchDone, setBatchDone] = useState(false);
+
+  // Track which fontIds are currently being polled
+  const pollingIntervals = useRef<Record<string, ReturnType<typeof setInterval>>>({});
 
   useEffect(() => {
     const stored = localStorage.getItem("adminUser");
-    if (!stored) {
-      router.push("/admin/login");
-    }
+    if (!stored) router.push("/admin/login");
+    // Cleanup intervals on unmount
+    return () => {
+      Object.values(pollingIntervals.current).forEach(clearInterval);
+    };
   }, [router]);
 
-  // Poll progress from Redis via API
-  useEffect(() => {
-    if (!processingFontId) return;
+  const getAuthToken = () => {
+    try {
+      const stored = localStorage.getItem("adminUser");
+      if (stored) return JSON.parse(stored).token as string;
+    } catch {}
+    return "";
+  };
 
-    const storedAdmin = localStorage.getItem("adminUser");
-    let token = "";
-    if (storedAdmin) {
-      try {
-        token = JSON.parse(storedAdmin).token;
-      } catch (e) {
-        console.error("Failed to parse token:", e);
-      }
-    }
+  // Update a single entry by its local id
+  const updateEntry = useCallback((id: string, patch: Partial<UploadEntry>) => {
+    setEntries((prev) => prev.map((e) => (e.id === id ? { ...e, ...patch } : e)));
+  }, []);
 
-    const headers: Record<string, string> = {};
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
+  // Start polling for a specific font's progress
+  const startPolling = useCallback(
+    (localId: string, fontId: string) => {
+      // Avoid duplicate intervals
+      if (pollingIntervals.current[fontId]) return;
 
-    const interval = setInterval(async () => {
-      try {
-        const res = await fetch(`${API_BASE_URL}/api/admin/fonts/${processingFontId}/progress`, {
-          headers,
-          credentials: "include",
-        });
-        const result = await res.json();
-        
-        if (result.success) {
-          const { progress, estimatedRemainingSeconds, step, status: currentStatus } = result.data;
-          setProgress(progress);
-          setEta(estimatedRemainingSeconds);
-          setStepMessage(step);
-          setProcessingStatus(currentStatus);
+      const token = getAuthToken();
+      const headers: Record<string, string> = {};
+      if (token) headers["Authorization"] = `Bearer ${token}`;
 
-          if (currentStatus === "DRAFT" || currentStatus === "PUBLISHED") {
-            setProgress(100);
-            setEta(0);
-            clearInterval(interval);
-          } else if (currentStatus === "ERROR") {
-            clearInterval(interval);
-            setStatus({
-              type: "error",
-              message: `تېروتنه: ${step}`,
-            });
+      const interval = setInterval(async () => {
+        try {
+          const res = await fetch(`${API_BASE_URL}/api/admin/fonts/${fontId}/progress`, {
+            headers,
+            credentials: "include",
+          });
+          const result = await res.json();
+
+          if (result.success) {
+            const { progress, estimatedRemainingSeconds, step, status } = result.data;
+
+            if (status === "DRAFT" || status === "PUBLISHED") {
+              updateEntry(localId, {
+                progress: 100,
+                eta: 0,
+                stepMessage: step,
+                status: "done",
+              });
+              clearInterval(pollingIntervals.current[fontId]);
+              delete pollingIntervals.current[fontId];
+            } else if (status === "ERROR") {
+              updateEntry(localId, {
+                status: "error",
+                stepMessage: step,
+                errorMessage: step,
+              });
+              clearInterval(pollingIntervals.current[fontId]);
+              delete pollingIntervals.current[fontId];
+            } else {
+              updateEntry(localId, {
+                progress,
+                eta: estimatedRemainingSeconds,
+                stepMessage: step,
+                status: "processing",
+              });
+            }
           }
+        } catch (err) {
+          console.error("Error polling font progress:", err);
         }
-      } catch (err) {
-        console.error("Error polling font progress:", err);
-      }
-    }, 1000);
+      }, 1200);
 
-    return () => clearInterval(interval);
-  }, [processingFontId]);
+      pollingIntervals.current[fontId] = interval;
+    },
+    [updateEntry]
+  );
+
+  const validateFiles = (files: FileList | File[]): File[] => {
+    const allowed = [".ttf", ".otf", ".woff", ".woff2"];
+    const maxSize = 20 * 1024 * 1024;
+    return Array.from(files).filter((f) => {
+      const ext = f.name.substring(f.name.lastIndexOf(".")).toLowerCase();
+      return allowed.includes(ext) && f.size <= maxSize;
+    });
+  };
+
+  const addFiles = (incoming: FileList | File[]) => {
+    const valid = validateFiles(incoming);
+    const newEntries: UploadEntry[] = valid.map((file) => ({
+      id: generateId(),
+      file,
+      status: "queued",
+      progress: 0,
+      eta: 0,
+      stepMessage: "",
+    }));
+    setEntries((prev) => {
+      // Deduplicate by name + size
+      const existingKeys = new Set(prev.map((e) => `${e.file.name}-${e.file.size}`));
+      const deduped = newEntries.filter(
+        (ne) => !existingKeys.has(`${ne.file.name}-${ne.file.size}`)
+      );
+      return [...prev, ...deduped];
+    });
+    setBatchDone(false);
+  };
 
   const handleDrag = (e: DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setIsDragActive(true);
-    } else if (e.type === "dragleave") {
-      setIsDragActive(false);
-    }
+    if (e.type === "dragenter" || e.type === "dragover") setIsDragActive(true);
+    else setIsDragActive(false);
   };
 
   const handleDrop = (e: DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragActive(false);
-    
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      validateAndSetFile(e.dataTransfer.files[0]);
-    }
+    if (e.dataTransfer.files?.length) addFiles(e.dataTransfer.files);
   };
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      validateAndSetFile(e.target.files[0]);
+    if (e.target.files?.length) {
+      addFiles(e.target.files);
+      e.target.value = ""; // reset so same files can be re-picked
     }
   };
 
-  const validateAndSetFile = (selectedFile: File) => {
-    setStatus(null);
-    const allowedExtensions = [".ttf", ".otf", ".woff", ".woff2"];
-    const ext = selectedFile.name.substring(selectedFile.name.lastIndexOf(".")).toLowerCase();
+  const removeEntry = (id: string) => {
+    setEntries((prev) => prev.filter((e) => e.id !== id));
+  };
 
-    if (!allowedExtensions.includes(ext)) {
-      setStatus({
-        type: "error",
-        message: "یوازې TTF, OTF, WOFF, او WOFF2 فایلونه اجازه لري.",
-      });
-      return;
-    }
-
-    const maxSize = 20 * 1024 * 1024; // 20MB
-    if (selectedFile.size > maxSize) {
-      setStatus({
-        type: "error",
-        message: "د فایل اندازه نشي کولی له 20MB څخه زیاته وي.",
-      });
-      return;
-    }
-
-    setFile(selectedFile);
+  const clearAll = () => {
+    setEntries([]);
+    setBatchDone(false);
   };
 
   const handleUpload = async () => {
-    if (!file) return;
-    setLoading(true);
-    setStatus(null);
+    const queued = entries.filter((e) => e.status === "queued");
+    if (queued.length === 0) return;
+
+    setIsUploading(true);
+
+    const token = getAuthToken();
+    const headers: Record<string, string> = {};
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
+    // Mark all queued as uploading
+    setEntries((prev) =>
+      prev.map((e) => (e.status === "queued" ? { ...e, status: "uploading" } : e))
+    );
 
     const formData = new FormData();
-    formData.append("fontFile", file);
-
-    const storedAdmin = localStorage.getItem("adminUser");
-    let token = "";
-    if (storedAdmin) {
-      try {
-        token = JSON.parse(storedAdmin).token;
-      } catch (e) {
-        console.error("Failed to parse admin user info:", e);
-      }
-    }
-
-    const headers: Record<string, string> = {};
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
+    queued.forEach((e) => formData.append("fontFiles", e.file));
 
     try {
       const res = await fetch(`${API_BASE_URL}/api/admin/fonts/upload`, {
@@ -169,166 +213,288 @@ export default function AdminFontUploadPage() {
 
       const result = await res.json();
 
-      if (!res.ok || !result.success) {
-        throw new Error(result.error?.message || "د فایل پورته کول ناکام شول.");
+      if (!res.ok && !result.data) {
+        // Entire batch failed (multer error, etc.)
+        setEntries((prev) =>
+          prev.map((e) =>
+            e.status === "uploading"
+              ? { ...e, status: "error", errorMessage: result.error?.message || "Upload failed" }
+              : e
+          )
+        );
+        return;
       }
 
-      // Transition to processing state
-      setProcessingFontId(result.data.id);
-      setProcessingFontName(result.data.name);
-      setProgress(5);
-      setEta(10);
-      setStepMessage("د پروسس پیل په حال کې دی...");
-      setProcessingStatus("PROCESSING");
-      setFile(null);
-    } catch (err: any) {
-      setStatus({
-        type: "error",
-        message: err.message || "د سرور سره د اړیکې پرمهال ستونزه رامنځته شوه.",
+      // result.data is an array of per-file results
+      const apiResults: Array<{
+        originalName: string;
+        success: boolean;
+        data?: { id: string; name: string; slug: string; status: string; jobId: string };
+        error?: { code: string; message: string };
+      }> = result.data || [];
+
+      // Match API results back to local entries by originalName
+      setEntries((prev) => {
+        const updated = [...prev];
+
+        apiResults.forEach((apiResult) => {
+          // Find the uploading entry with matching filename
+          const idx = updated.findIndex(
+            (e) => e.status === "uploading" && e.file.name === apiResult.originalName
+          );
+          if (idx === -1) return;
+
+          if (apiResult.success && apiResult.data) {
+            updated[idx] = {
+              ...updated[idx],
+              status: "processing",
+              fontId: apiResult.data.id,
+              fontName: apiResult.data.name,
+              fontSlug: apiResult.data.slug,
+              progress: 5,
+              eta: 10,
+              stepMessage: t("adminUpload.processingTitle"),
+            };
+          } else {
+            const isDuplicate = apiResult.error?.code === "DUPLICATE_FONT_FILE";
+            updated[idx] = {
+              ...updated[idx],
+              status: isDuplicate ? "duplicate" : "error",
+              errorMessage: apiResult.error?.message || "Failed",
+            };
+          }
+        });
+
+        return updated;
       });
+
+      // Start polling for successfully submitted fonts
+      // Wait for state to flush, then start polling from the entries we know
+      apiResults.forEach((apiResult) => {
+        if (apiResult.success && apiResult.data) {
+          const localEntry = queued.find((e) => e.file.name === apiResult.originalName);
+          if (localEntry) {
+            startPolling(localEntry.id, apiResult.data.id);
+          }
+        }
+      });
+    } catch (err: any) {
+      setEntries((prev) =>
+        prev.map((e) =>
+          e.status === "uploading"
+            ? { ...e, status: "error", errorMessage: err.message || "Network error" }
+            : e
+        )
+      );
     } finally {
-      setLoading(false);
+      setIsUploading(false);
     }
   };
 
-  const handleReset = () => {
-    setProcessingFontId(null);
-    setProcessingFontName("");
-    setProgress(0);
-    setEta(0);
-    setStepMessage("");
-    setProcessingStatus("");
-    setStatus(null);
-    setFile(null);
+  // Check if batch is complete (all non-queued and no uploading/processing)
+  useEffect(() => {
+    if (entries.length === 0) return;
+    const allSettled = entries.every((e) =>
+      ["done", "error", "duplicate"].includes(e.status)
+    );
+    if (allSettled) setBatchDone(true);
+  }, [entries]);
+
+  const queuedCount = entries.filter((e) => e.status === "queued").length;
+  const successCount = entries.filter((e) => e.status === "done").length;
+  const failedCount = entries.filter((e) =>
+    ["error", "duplicate"].includes(e.status)
+  ).length;
+  const processingCount = entries.filter((e) =>
+    ["uploading", "processing"].includes(e.status)
+  ).length;
+
+  const getStatusBadgeClass = (status: FileStatus) => {
+    switch (status) {
+      case "queued": return styles.badgeQueued;
+      case "uploading": return styles.badgeUploading;
+      case "processing": return styles.badgeProcessing;
+      case "done": return styles.badgeDone;
+      case "error": return styles.badgeError;
+      case "duplicate": return styles.badgeDuplicate;
+    }
+  };
+
+  const getStatusLabel = (status: FileStatus) => {
+    switch (status) {
+      case "queued": return t("adminUpload.statusQueued");
+      case "uploading": return t("adminUpload.statusUploading");
+      case "processing": return t("adminUpload.statusProcessing");
+      case "done": return t("adminUpload.statusDone");
+      case "error": return t("adminUpload.statusError");
+      case "duplicate": return t("adminUpload.statusDuplicate");
+    }
   };
 
   return (
     <main className={styles.container}>
       <div className={styles.card}>
         <Link href="/admin/dashboard" className={styles.backBtn}>
-          ← بیرته اداري تختې ته وګرځئ
+          ← {t("adminDashboard.title")}
         </Link>
 
         <div className={styles.titleArea}>
-          <h1 className={styles.title}>نوی فونټ اپلوډ کړئ</h1>
-          <p className={styles.desc}>یوازې TTF, OTF, WOFF, یا WOFF2 فایلونه پورته کیدی شي.</p>
+          <h1 className={styles.title}>{t("adminUpload.title")}</h1>
+          <p className={styles.desc}>{t("adminUpload.desc")}</p>
         </div>
 
-        {status && !processingFontId && (
-          <div className={`${styles.statusMessage} ${styles[status.type]}`}>
-            {status.message}
+        {/* Dropzone — always visible unless batch is fully done */}
+        {!batchDone && (
+          <div
+            className={`${styles.dropzone} ${isDragActive ? styles.dropzoneActive : ""}`}
+            onDragEnter={handleDrag}
+            onDragOver={handleDrag}
+            onDragLeave={handleDrag}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <span className={styles.dropzoneIcon}>📥</span>
+            <p style={{ fontWeight: 600 }}>{t("adminUpload.dropzoneText")}</p>
+            <p style={{ fontSize: "0.8rem", color: "var(--color-text-muted)" }}>
+              {t("adminUpload.maxSize")}
+            </p>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".ttf,.otf,.woff,.woff2"
+              multiple
+              className={styles.fileInput}
+              onChange={handleFileChange}
+            />
           </div>
         )}
 
-        {/* Dynamic rendering depending on processing state */}
-        {processingFontId ? (
-          <div>
-            {processingStatus === "DRAFT" || processingStatus === "PUBLISHED" ? (
-              <div className={styles.successCard}>
-                <span className={styles.successIcon}>✓</span>
-                <h2 className={styles.successTitle}>پروسس په بریالیتوب سره بشپړ شو!</h2>
-                <p className={styles.successDesc}>
-                  فونټ "{processingFontName}" په بریالیتوب سره تحلیل شو، د WOFF2 ویب فونټ فارمیټ ورته جوړ شو، او په کټګورۍ کې د ډراف (Draft) په توګه خوندي شو.
-                </p>
-                <div className={styles.actionRow}>
-                  <Link
-                    href={`/admin/fonts/${processingFontId}/edit`}
-                    className={styles.btn}
-                    style={{ flexGrow: 1, textDecoration: "none" }}
-                  >
-                    تفصیلات سمول (Edit Info)
-                  </Link>
-                  <button
-                    className={`${styles.btn} ${styles.removeBtn}`}
-                    style={{
-                      flexGrow: 1,
-                      backgroundColor: "var(--color-bg-secondary)",
-                      border: "1px solid var(--color-border)",
-                      color: "var(--color-text-primary)",
-                    }}
-                    onClick={handleReset}
-                  >
-                    بل فونټ پورته کړئ
-                  </button>
-                </div>
-              </div>
-            ) : processingStatus === "ERROR" ? (
-              <div className={styles.successCard} style={{ borderColor: "#fee2e2", backgroundColor: "#fef2f2" }}>
-                <span className={styles.successIcon} style={{ color: "#dc2626" }}>✗</span>
-                <h2 className={styles.successTitle} style={{ color: "#991b1b" }}>د فونټ پروسس کول ناکام شول!</h2>
-                <p className={styles.successDesc} style={{ color: "#b91c1c" }}>
-                  {stepMessage || "د فایل تحلیل کې ستونزه وه. مهرباني وکړئ ډاډ ترلاسه کړئ چې فونټ خراب نه دی او پښتو/عربي کیپ ملاتړ لري."}
-                </p>
-                <button
-                  className={styles.btn}
-                  onClick={handleReset}
-                  style={{ width: "100%" }}
-                >
-                  بیا هڅه وکړئ (Try Again)
+        {/* File list */}
+        {entries.length > 0 && (
+          <div className={styles.fileList}>
+            {/* List header */}
+            <div className={styles.fileListHeader}>
+              <span>
+                {entries.length} {t("adminUpload.filesSelected")}
+              </span>
+              {!isUploading && (
+                <button className={styles.clearAllBtn} onClick={clearAll}>
+                  {t("adminUpload.clearAll")}
                 </button>
+              )}
+            </div>
+
+            {/* Per-file rows */}
+            {entries.map((entry) => (
+              <div key={entry.id} className={styles.fileRow}>
+                <div className={styles.fileRowTop}>
+                  <div className={styles.fileRowInfo}>
+                    <span className={styles.fileName}>{entry.file.name}</span>
+                    <span className={styles.fileSize}>
+                      {(entry.file.size / (1024 * 1024)).toFixed(1)}{" "}
+                      {t("adminUpload.fileSizeMB")}
+                    </span>
+                  </div>
+                  <div className={styles.fileRowRight}>
+                    <span className={`${styles.badge} ${getStatusBadgeClass(entry.status)}`}>
+                      {getStatusLabel(entry.status)}
+                    </span>
+                    {entry.status === "queued" && !isUploading && (
+                      <button
+                        className={styles.removeRowBtn}
+                        onClick={() => removeEntry(entry.id)}
+                        title={t("adminUpload.removeBtn")}
+                      >
+                        ✕
+                      </button>
+                    )}
+                    {entry.status === "done" && entry.fontId && (
+                      <Link
+                        href={`/admin/fonts/${entry.fontId}/edit`}
+                        className={styles.editRowBtn}
+                      >
+                        {t("adminUpload.btnEditDetails")}
+                      </Link>
+                    )}
+                  </div>
+                </div>
+
+                {/* Progress bar for processing items */}
+                {(entry.status === "uploading" || entry.status === "processing") && (
+                  <div className={styles.rowProgress}>
+                    <div className={styles.progressBarWrapper}>
+                      <div
+                        className={styles.progressBar}
+                        style={{ width: `${entry.progress}%` }}
+                      />
+                    </div>
+                    <div className={styles.progressMeta}>
+                      <span className={styles.progressStep}>{entry.stepMessage}</span>
+                      <span className={styles.progressEta}>
+                        {entry.progress}% ·{" "}
+                        {entry.eta > 0
+                          ? `~${entry.eta}s ${t("adminUpload.etaRemaining")}`
+                          : t("adminUpload.etaCompleting")}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Error message */}
+                {(entry.status === "error" || entry.status === "duplicate") &&
+                  entry.errorMessage && (
+                    <p className={styles.rowError}>{entry.errorMessage}</p>
+                  )}
+
+                {/* Done — font name */}
+                {entry.status === "done" && entry.fontName && (
+                  <p className={styles.rowDoneMsg}>
+                    ✓ {entry.fontName} — {t("adminUpload.processingSuccessDesc")}
+                  </p>
+                )}
               </div>
-            ) : (
-              <div className={styles.progressContainer}>
-                <div className={styles.progressInfo}>
-                  <span className={styles.progressLabel}>د "{processingFontName}" فونټ تحلیل او پروسس...</span>
-                  <span className={styles.progressPercentage}>{progress}%</span>
-                </div>
-                <div className={styles.progressBarWrapper}>
-                  <div className={styles.progressBar} style={{ width: `${progress}%` }} />
-                </div>
-                <div className={styles.progressMeta}>
-                  <span className={styles.progressStep}>{stepMessage}</span>
-                  <span className={styles.progressEta}>
-                    {eta > 0 ? `باقي پاتې وخت: ~${eta} ثانیې` : "د بشپړیدو په حال کې..."}
+            ))}
+
+            {/* Batch summary */}
+            {batchDone && (
+              <div className={styles.batchSummary}>
+                <span className={styles.batchTitle}>{t("adminUpload.batchSummary")}:</span>
+                {successCount > 0 && (
+                  <span className={styles.batchGood}>
+                    {successCount} {t("adminUpload.batchSucceeded")}
                   </span>
-                </div>
+                )}
+                {failedCount > 0 && (
+                  <span className={styles.batchBad}>
+                    {failedCount} {t("adminUpload.batchFailed")}
+                  </span>
+                )}
+                <button className={styles.btn} onClick={clearAll}>
+                  {t("adminUpload.btnUploadAnother")}
+                </button>
               </div>
             )}
           </div>
-        ) : (
-          <div>
-            {!file ? (
-              <div
-                className={`${styles.dropzone} ${isDragActive ? styles.dropzoneActive : ""}`}
-                onDragEnter={handleDrag}
-                onDragOver={handleDrag}
-                onDragLeave={handleDrag}
-                onDrop={handleDrop}
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <span className={styles.dropzoneIcon}>📥</span>
-                <p style={{ fontWeight: 600 }}>فایل دلته راکاږئ یا د غوره کولو لپاره کلیک وکړئ</p>
-                <p style={{ fontSize: "0.8rem", color: "var(--color-text-muted)" }}>
-                  مکسیمم اندازه: 20MB
-                </p>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".ttf,.otf,.woff,.woff2"
-                  className={styles.fileInput}
-                  onChange={handleFileChange}
-                />
-              </div>
-            ) : (
-              <div className={styles.fileInfo}>
-                <div>
-                  <p className={styles.fileName}>{file.name}</p>
-                  <p className={styles.fileSize}>{(file.size / (1024 * 1024)).toFixed(2)} MB</p>
-                </div>
-                <button className={styles.removeBtn} onClick={() => setFile(null)} disabled={loading}>
-                  لرې کول
-                </button>
-              </div>
-            )}
+        )}
 
+        {/* Upload button */}
+        {!batchDone && entries.length > 0 && (
+          <div className={styles.uploadActions}>
             <button
               className={styles.btn}
               onClick={handleUpload}
-              disabled={!file || loading}
-              style={{ width: "100%", marginTop: "var(--spacing-md)" }}
+              disabled={queuedCount === 0 || isUploading || processingCount > 0}
+              style={{ flexGrow: 1 }}
             >
-              {loading ? "پورته کیږي..." : "فونټ اپلوډ او پروسس کړئ"}
+              {isUploading
+                ? t("adminUpload.btnUploading")
+                : `${t("adminUpload.btnUpload")} (${queuedCount})`}
             </button>
+            {processingCount > 0 && (
+              <span className={styles.processingNote}>
+                {processingCount} {t("adminUpload.statusProcessing")}
+              </span>
+            )}
           </div>
         )}
       </div>

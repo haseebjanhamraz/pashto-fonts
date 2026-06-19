@@ -4,27 +4,29 @@ import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { usePreviewState } from "@/hooks/usePreviewState";
 import { fetchFonts } from "@/lib/api";
+import { useLanguage } from "@/lib/i18n/useLanguage";
 import FontCard from "./FontCard";
 import styles from "./FontCatalog.module.css";
 
 export default function FontCatalog() {
+  const { language, t } = useLanguage();
   const [page, setPage] = useState(1);
-  const { searchQuery, category, language, sort, previewText, fontSize } = usePreviewState();
+  const { searchQuery, category, language: filterLang, sort, previewText, fontSize } = usePreviewState();
 
   // Reset page when filters change
   useEffect(() => {
     setPage(1);
-  }, [searchQuery, category, language, sort]);
+  }, [searchQuery, category, filterLang, sort]);
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["fonts", { page, searchQuery, category, language, sort }],
+    queryKey: ["fonts", { page, searchQuery, category, language: filterLang, sort }],
     queryFn: () =>
       fetchFonts({
         page,
         limit: 12,
         search: searchQuery || undefined,
         category,
-        language,
+        language: filterLang,
         sort,
       }),
   });
@@ -35,8 +37,12 @@ export default function FontCatalog() {
         <div className={styles.container}>
           <div className={styles.loadingWrapper}>
             <div className={styles.loadingSpinner}></div>
-            <h3 className={styles.title}>فونټونه پورته کیږي...</h3>
-            <p className={styles.desc}>مهرباني وکړئ یو څو شیبې انتظار وکړئ.</p>
+            <h3 className={styles.title}>
+              {language === "ps" ? "فونټونه پورته کیږي..." : "Loading fonts..."}
+            </h3>
+            <p className={styles.desc}>
+              {language === "ps" ? "مهرباني وکړئ یو څو شیبې انتظار وکړئ." : "Please wait a moment."}
+            </p>
           </div>
         </div>
       </section>
@@ -48,8 +54,10 @@ export default function FontCatalog() {
       <section className={styles.catalogSection}>
         <div className={styles.container}>
           <div className={styles.errorWrapper}>
-            <h3 className={styles.title}>تېروتنه رامنځته شوه!</h3>
-            <p className={styles.desc}>د فونټونو په پورته کولو کې ستونزه ده. مهرباني وکړئ وروسته هڅه وکړئ.</p>
+            <h3 className={styles.title}>{t("common.error")}</h3>
+            <p className={styles.desc}>
+              {language === "ps" ? "د فونټونو په پورته کولو کې ستونزه ده. مهرباني وکړئ وروسته هڅه وکړئ." : "Failed to load fonts list. Please try again later."}
+            </p>
           </div>
         </div>
       </section>
@@ -64,8 +72,10 @@ export default function FontCatalog() {
       <section className={styles.catalogSection}>
         <div className={styles.container}>
           <div className={styles.emptyWrapper}>
-            <h3 className={styles.title}>هيڅ فونټ ونه موندل شو</h3>
-            <p className={styles.desc}>ستاسو د لټون لپاره کوم فونټ شتون نلري.</p>
+            <h3 className={styles.title}>{t("fonts.noFontsFound")}</h3>
+            <p className={styles.desc}>
+              {language === "ps" ? "ستاسو د لټون لپاره کوم فونټ شتون نلري." : "There are no fonts matching your search filters."}
+            </p>
           </div>
         </div>
       </section>
@@ -94,17 +104,19 @@ export default function FontCatalog() {
               onClick={() => setPage((p) => Math.max(p - 1, 1))}
               disabled={page === 1}
             >
-              مخکینی
+              {language === "ps" ? "مخکینی" : "Previous"}
             </button>
             <span className={styles.pageIndicator}>
-              پاڼه {page} له {pagination.totalPages} څخه
+              {language === "ps"
+                ? `پاڼه ${page} له ${pagination.totalPages} څخه`
+                : `Page ${page} of ${pagination.totalPages}`}
             </span>
             <button
               className={styles.pageBtn}
               onClick={() => setPage((p) => Math.min(p + 1, pagination.totalPages))}
               disabled={page === pagination.totalPages}
             >
-              بل
+              {language === "ps" ? "بل" : "Next"}
             </button>
           </div>
         )}

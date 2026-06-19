@@ -2,6 +2,7 @@ import { exec } from "child_process";
 import path from "path";
 import fs from "fs";
 import util from "util";
+import crypto from "crypto";
 import ttf2woff2 from "ttf2woff2";
 import { prisma } from "../utils/db";
 import { StorageService } from "../services/storage";
@@ -66,11 +67,36 @@ export class FontProcessor {
       const weight = analysisResult.weight;
       const style = analysisResult.style as FontStyle;
       const fontSlug = fontRecord.slug;
+      const familyName = analysisResult.familyName;
+
+      // Duplicate Check: Check if this family already has this weight & style
+      const existingDuplicateFile = await prisma.fontFile.findFirst({
+        where: {
+          weight,
+          style,
+          font: {
+            name: {
+              equals: familyName,
+              mode: "insensitive",
+            },
+          },
+        },
+        include: {
+          font: true,
+        },
+      });
+
+      if (existingDuplicateFile) {
+        throw new Error(`دا فونټ په کټګورۍ کې شتون لري (Duplicate font: "${familyName}" already has style ${weight} ${style})`);
+      }
 
       // 2. Generate WOFF2 file
       console.log(`[FontProcessor] Generating WOFF2 file...`);
       const originalBuffer = fs.readFileSync(filePath);
       const woff2Buffer = ttf2woff2(originalBuffer);
+      
+      const originalChecksum = crypto.createHash("sha256").update(originalBuffer).digest("hex");
+      const woff2Checksum = crypto.createHash("sha256").update(woff2Buffer).digest("hex");
       
       const woff2Path = filePath + ".woff2";
       fs.writeFileSync(woff2Path, woff2Buffer);
@@ -126,6 +152,7 @@ export class FontProcessor {
             fileSize: fs.statSync(filePath).size,
             originalFilename,
             isWebFont: false,
+            checksum: originalChecksum,
           },
         });
 
@@ -141,6 +168,7 @@ export class FontProcessor {
             fileSize: fs.statSync(woff2Path).size,
             originalFilename: `${path.parse(originalFilename).name}.woff2`,
             isWebFont: true,
+            checksum: woff2Checksum,
           },
         });
       });

@@ -1,21 +1,22 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { fetchFontDetail } from "@/lib/api";
 import Header from "@/components/Header";
+import { useLanguage } from "@/lib/i18n/useLanguage";
 import styles from "../font-detail.module.css";
 
 const DEFAULT_PREVIEW = "پښتو ژبه زموږ د کلتور، ادب او ښکلا ژبه ده";
 
 export default function FontDetailPage() {
+  const { t, language } = useLanguage();
   const { slug } = useParams() as { slug: string };
   const [previewText, setPreviewText] = useState(DEFAULT_PREVIEW);
   const [fontSize, setFontSize] = useState(48);
   const [copiedLink, setCopiedLink] = useState(false);
-  const [copiedCss, setCopiedCss] = useState(false);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["font-detail", slug],
@@ -59,18 +60,37 @@ export default function FontDetailPage() {
     setTimeout(() => setCopiedLink(false), 2000);
   };
 
-  const handleCopyCss = () => {
-    const cssCode = `font-family: "${font?.name || ""}", sans-serif;`;
-    navigator.clipboard.writeText(cssCode);
-    setCopiedCss(true);
-    setTimeout(() => setCopiedCss(false), 2000);
-  };
-
-  const handleDownload = () => {
+  const handleDownloadCss = () => {
     if (font) {
-      window.open(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/fonts/${font.slug}/download`);
+      window.open(
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/fonts/${font.slug}/download?format=css`
+      );
     }
   };
+
+  const [showDownloadDropdown, setShowDownloadDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const triggerDownload = (format: string) => {
+    if (font) {
+      window.open(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/fonts/${font.slug}/download?format=${format}`);
+      setShowDownloadDropdown(false);
+    }
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDownloadDropdown(false);
+      }
+    };
+    if (showDownloadDropdown) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showDownloadDropdown]);
 
   if (isLoading) {
     return (
@@ -111,7 +131,7 @@ export default function FontDetailPage() {
       <main className={styles.container}>
         {/* Back Link */}
         <Link href="/fonts" className={styles.backLink}>
-          ← بیرته ټول فونټونه وګورئ
+          {t("fontDetail.backToList")}
         </Link>
 
         {/* Font Info Header Section */}
@@ -119,25 +139,46 @@ export default function FontDetailPage() {
           <div className={styles.titleArea}>
             <h1 className={styles.fontTitle}>{font.name}</h1>
             <div className={styles.metaInfo}>
-              <span>ډیزاینر: {font.designer || "نامعلوم ډيزاینر"}</span>
+              <span>{t("fontDetail.designer")}: {font.designer || (language === "ps" ? "نامعلوم ډيزاینر" : "Unknown")}</span>
               <span className={styles.metaDivider}>|</span>
-              <span>خپرندوی: {font.publisher || "نامعلوم خپرندوی"}</span>
+              <span>{t("fontDetail.publisher")}: {font.publisher || (language === "ps" ? "نامعلوم خپرندوی" : "Unknown")}</span>
               <span className={styles.metaDivider}>|</span>
-              <span>کټګورۍ: {font.category?.name || "عام"}</span>
+              <span>{t("fontDetail.category")}: {font.category?.name || (language === "ps" ? "عام" : "General")}</span>
             </div>
             <div className={styles.langBadges}>
-              {font.supportsPashto && <span className={styles.langBadge}>پښتو (Pashto)</span>}
-              {font.supportsUrdu && <span className={styles.langBadge}>اردو (Urdu)</span>}
-              {font.supportsArabic && <span className={styles.langBadge}>عربي (Arabic)</span>}
-              {font.supportsPersian && <span className={styles.langBadge}>فارسي (Persian)</span>}
+              {font.supportsPashto && <span className={styles.langBadge}>{language === "ps" ? "پښتو (Pashto)" : "Pashto"}</span>}
+              {font.supportsUrdu && <span className={styles.langBadge}>{language === "ps" ? "اردو (Urdu)" : "Urdu"}</span>}
+              {font.supportsArabic && <span className={styles.langBadge}>{language === "ps" ? "عربي (Arabic)" : "Arabic"}</span>}
+              {font.supportsPersian && <span className={styles.langBadge}>{language === "ps" ? "فارسي (Persian)" : "Persian"}</span>}
             </div>
           </div>
 
           <div className={styles.downloadArea}>
-            <button className={styles.downloadBtn} onClick={handleDownload}>
-              فونټ ډاونلوډ کړئ
-            </button>
-            <span className={styles.licensing}>خلاص سرچینه (مفت ډاونلوډ)</span>
+            <div ref={dropdownRef} className={styles.downloadWrapper}>
+              <button
+                className={styles.downloadBtn}
+                onClick={() => setShowDownloadDropdown(!showDownloadDropdown)}
+              >
+                {t("fonts.downloadBtn")} ▾
+              </button>
+              {showDownloadDropdown && (
+                <div className={styles.dropdownMenu}>
+                  <button className={styles.dropdownItem} onClick={() => triggerDownload("zip")}>
+                    📦 {language === "ps" ? "بشپړ بسته (ZIP)" : "Complete Pack (ZIP)"}
+                  </button>
+                  <button className={styles.dropdownItem} onClick={() => triggerDownload("original")}>
+                    🔤 {language === "ps" ? "اصلي فونټ (TTF/OTF)" : "Original Font (TTF/OTF)"}
+                  </button>
+                  <button className={styles.dropdownItem} onClick={() => triggerDownload("woff2")}>
+                    🌐 {language === "ps" ? "ویب فونټ (WOFF2)" : "Web Font (WOFF2)"}
+                  </button>
+                  <button className={styles.dropdownItem} onClick={() => triggerDownload("css")}>
+                    🎨 {language === "ps" ? "سی ایس ایس (CSS)" : "CSS Stylesheet"}
+                  </button>
+                </div>
+              )}
+            </div>
+            <span className={styles.licensing}>{t("fontDetail.licenseOpen")}</span>
           </div>
         </section>
 
@@ -150,7 +191,7 @@ export default function FontDetailPage() {
                 className={styles.previewInput}
                 value={previewText}
                 onChange={(e) => setPreviewText(e.target.value)}
-                placeholder="دلته خپل پښتو متن ولیکئ..."
+                placeholder={t("fonts.previewPlaceholder")}
               />
             </div>
             <div className={styles.controlGroup}>
@@ -182,26 +223,26 @@ export default function FontDetailPage() {
         {/* Integration Code Embed Cards */}
         <section className={styles.embedSection}>
           <div className={styles.embedCard}>
-            <h2 className={styles.embedTitle}>HTML ځای پر ځای کولو کوډ (Embed Link)</h2>
+            <h2 className={styles.embedTitle}>{t("fontDetail.htmlEmbed")}</h2>
             <p style={{ fontSize: "0.85rem", color: "var(--color-text-secondary)" }}>
-              دا لینک د خپلې ویب پاڼې د HTML په `&lt;head&gt;` برخې کې کاپي کړئ:
+              {t("fontDetail.htmlEmbedDesc")}
             </p>
             <div className={styles.codeBox}>
               <button className={styles.copyBtn} onClick={handleCopyLink}>
-                {copiedLink ? "کاپي شو!" : "کاپي کول"}
+                {copiedLink ? t("fontDetail.copied") : t("fontDetail.copy")}
               </button>
               <code>{embedCode}</code>
             </div>
           </div>
 
           <div className={styles.embedCard}>
-            <h2 className={styles.embedTitle}>CSS کارولو طریقه (CSS Rules)</h2>
+            <h2 className={styles.embedTitle}>{t("fontDetail.cssRules")}</h2>
             <p style={{ fontSize: "0.85rem", color: "var(--color-text-secondary)" }}>
-              خپلو CSS فایلونو کې دا قاعده د نښه شوي عنصر خط لپاره وکاروئ:
+              {t("fontDetail.cssRulesDesc")}
             </p>
             <div className={styles.codeBox}>
-              <button className={styles.copyBtn} onClick={handleCopyCss}>
-                {copiedCss ? "کاپي شو!" : "کاپي کول"}
+              <button className={`${styles.copyBtn} ${styles.downloadCssBtn}`} onClick={handleDownloadCss}>
+                ⬇ {language === "ps" ? "CSS ډاونلوډ" : "Download CSS"}
               </button>
               <code>{cssCode}</code>
             </div>
@@ -218,7 +259,11 @@ export default function FontDetailPage() {
         marginTop: "var(--spacing-3xl)"
       }}>
         <div className="container">
-          <p>© 2026 پښتو فونټونه. خطونه د ژوند ژباړونکي دي.</p>
+          <p>
+            {language === "ps" 
+              ? "© 2026 پښتو فونټونه. خطونه د ژوند ژباړونکي دي." 
+              : "© 2026 Pashto Fonts. Letters are the translators of life."}
+          </p>
         </div>
       </footer>
     </>
