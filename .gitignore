@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Next.js build output
+.next/
+out/
+
+# NestJS / API / Worker build output
+dist/
+build/
+
+# IDE files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Database/Prisma
+/apps/api/prisma/migrations/
+/apps/api/prisma/dev.db
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Uploads and temporary directories
+/apps/api/uploads/
+/apps/worker/temp/
+minio-data/
+postgres-data/
+redis-data/

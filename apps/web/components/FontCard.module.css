@@ -1,0 +1,137 @@
+.card {
+  background-color: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 280px;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  overflow: hidden;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-border-hover);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--spacing-md);
+}
+
+.fontName {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: 2px;
+}
+
+.metaInfo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+}
+
+.metaInfo span:not(:last-child)::after {
+  content: " • ";
+  margin-right: var(--spacing-xs);
+}
+
+.designer {
+  font-style: italic;
+}
+
+.previewText {
+  flex-grow: 1;
+  padding: var(--spacing-md) 0;
+  color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  font-preview {
+    /* Set custom styles dynamically */
+  }
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--spacing-md);
+  margin-top: var(--spacing-md);
+}
+
+.btnGroup {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.btn {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  transition: all 0.2s ease;
+}
+
+.btn:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  background-color: var(--color-bg-secondary);
+}
+
+.btnPrimary {
+  background-color: var(--color-accent);
+  color: var(--color-text-on-accent);
+  border-color: var(--color-accent);
+}
+
+.btnPrimary:hover {
+  background-color: var(--color-accent-hover);
+  color: var(--color-text-on-accent);
+}
+
+.badge {
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+}
+.tagGroup {
+  display: flex;
+  gap: 4px;
+}
+.langBadge {
+  background-color: #eff6ff;
+  color: #1e40af;
+  font-size: 0.7rem;
+  padding: 1px 4px;
+  border-radius: 2px;
+  font-weight: 700;
+}
+.langBadgeActive {
+  background-color: #dbeafe;
+}
+@media (prefers-color-scheme: dark) {
+  .langBadge {
+    background-color: #1e40af;
+    color: #eff6ff;
+  }
+}

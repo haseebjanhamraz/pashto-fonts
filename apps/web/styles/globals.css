@@ -1,0 +1,30 @@
+@import "./reset.css";
+@import "./theme.css";
+
+body {
+  font-family: var(--font-ui);
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Global utility classes */
+.container {
+  width: 100%;
+  max-width: var(--max-width-container);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--spacing-md);
+  padding-right: var(--spacing-md);
+}
+
+/* RTL Text Area Defaults */
+.font-preview {
+  direction: rtl;
+  unicode-bidi: plaintext;
+  text-align: right;
+  line-height: 1.8;
+  word-break: normal;
+}

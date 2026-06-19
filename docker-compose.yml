@@ -1,0 +1,44 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: pashto-fonts-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: pashto_fonts
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: pashto-fonts-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
+  minio:
+    image: minio/minio:latest
+    container_name: pashto-fonts-minio
+    restart: always
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio123
+    volumes:
+      - minio-data:/data
+    command: server /data --console-address ":9001"
+
+volumes:
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
+  minio-data:
+    driver: local

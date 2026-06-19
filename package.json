@@ -1,0 +1,17 @@
+{
+  "name": "pashto-fonts-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:services": "docker-compose up -d",
+    "dev:apps": "npm run dev --workspaces --parallel",
+    "build": "npm run build --workspaces",
+    "db:generate": "npm run db:generate --workspace=apps/api",
+    "db:migrate": "npm run db:migrate --workspace=apps/api",
+    "db:seed": "npm run db:seed --workspace=apps/api"
+  }
+}

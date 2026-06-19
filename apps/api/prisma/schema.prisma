@@ -1,0 +1,147 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Admin {
+  id           String    @id @default(cuid())
+  name         String
+  email        String    @unique
+  passwordHash String
+  role         AdminRole @default(ADMIN)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+enum AdminRole {
+  SUPER_ADMIN
+  ADMIN
+  EDITOR
+}
+
+model Font {
+  id              String          @id @default(cuid())
+  name            String
+  slug            String          @unique
+  description     String?
+  designer        String?
+  publisher       String?
+  sourceUrl       String?
+  license         String          @default("Open Source")
+  categoryId      String?
+  category        Category?       @relation(fields: [categoryId], references: [id])
+  status          FontStatus      @default(DRAFT)
+  isFeatured      Boolean         @default(false)
+  isVariable      Boolean         @default(false)
+  
+  supportsPashto  Boolean         @default(false)
+  supportsUrdu    Boolean         @default(false)
+  supportsArabic  Boolean         @default(false)
+  supportsPersian Boolean         @default(false)
+  
+  viewCount       Int             @default(0)
+  downloadCount   Int             @default(0)
+  embedLoadCount  Int             @default(0)
+  
+  files           FontFile[]
+  tags            FontTag[]
+  analytics       FontAnalytics[]
+  
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([name])
+  @@index([slug])
+  @@index([status])
+  @@index([categoryId])
+}
+
+model FontFile {
+  id               String     @id @default(cuid())
+  fontId           String
+  font             Font       @relation(fields: [fontId], references: [id], onDelete: Cascade)
+  weight           Int
+  style            FontStyle  @default(NORMAL)
+  format           FontFormat
+  fileUrl          String
+  storageKey       String
+  fileSize         Int?
+  originalFilename String?
+  checksum         String?
+  isWebFont        Boolean    @default(false)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  @@index([fontId])
+  @@index([weight])
+  @@index([format])
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  fonts       Font[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model FontTag {
+  id        String   @id @default(cuid())
+  fontId    String
+  font      Font     @relation(fields: [fontId], references: [id], onDelete: Cascade)
+  tag       String
+  createdAt DateTime @default(now())
+
+  @@index([fontId])
+  @@index([tag])
+}
+
+model FontAnalytics {
+  id        String         @id @default(cuid())
+  fontId    String
+  font      Font           @relation(fields: [fontId], references: [id], onDelete: Cascade)
+  eventType AnalyticsEvent
+  ipHash    String?
+  userAgent String?
+  referrer  String?
+  createdAt DateTime       @default(now())
+
+  @@index([fontId])
+  @@index([eventType])
+  @@index([createdAt])
+}
+
+enum FontStatus {
+  DRAFT
+  PROCESSING
+  PUBLISHED
+  PRIVATE
+  ARCHIVED
+  ERROR
+}
+
+enum FontStyle {
+  NORMAL
+  ITALIC
+  OBLIQUE
+}
+
+enum FontFormat {
+  TTF
+  OTF
+  WOFF
+  WOFF2
+}
+
+enum AnalyticsEvent {
+  VIEW
+  DOWNLOAD
+  COPY_CSS
+  EMBED_LOAD
+}
