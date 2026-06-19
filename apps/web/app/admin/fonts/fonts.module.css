@@ -1,0 +1,204 @@
+.container {
+  max-width: var(--max-width-container);
+  margin: var(--spacing-2xl) auto;
+  padding: 0 var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+}
+
+.title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--color-text-primary);
+}
+
+.uploadBtn {
+  background-color: var(--color-accent);
+  color: var(--color-text-on-accent);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+}
+
+.uploadBtn:hover {
+  background-color: var(--color-accent-hover);
+}
+
+.tableWrapper {
+  background-color: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: right; /* RTL alignment */
+}
+
+.th {
+  background-color: var(--color-bg-secondary);
+  color: var(--color-text-secondary);
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.td {
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.95rem;
+  color: var(--color-text-primary);
+}
+
+.fontName {
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.statusBadge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.statusDRAFT {
+  background-color: #fef3c7;
+  color: #d97706;
+}
+
+.statusPROCESSING {
+  background-color: #dbeafe;
+  color: #2563eb;
+}
+
+.statusPUBLISHED {
+  background-color: #d1fae5;
+  color: #059669;
+}
+
+.statusERROR {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+.actions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.actionBtn {
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.actionBtn:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.deleteBtn {
+  color: #dc2626;
+  border-color: #fee2e2;
+}
+
+.deleteBtn:hover {
+  background-color: #fef2f2;
+  border-color: #dc2626;
+  color: #dc2626;
+}
+
+.emptyState {
+  text-align: center;
+  padding: var(--spacing-3xl) 0;
+  color: var(--color-text-muted);
+}
+
+.miniProgressContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 140px;
+  text-align: right;
+}
+
+.miniProgressBarWrapper {
+  width: 100%;
+  height: 6px;
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 9999px;
+  overflow: hidden;
+  position: relative;
+}
+
+.miniProgressBar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-accent) 0%, #ff4b4b 100%);
+  border-radius: 9999px;
+  transition: width 0.3s ease-out;
+  position: relative;
+}
+
+.miniProgressBar::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; bottom: 0; right: 0;
+  background-image: linear-gradient(
+    -45deg, 
+    rgba(255, 255, 255, .15) 25%, 
+    transparent 25%, 
+    transparent 50%, 
+    rgba(255, 255, 255, .15) 50%, 
+    rgba(255, 255, 255, .15) 75%, 
+    transparent 75%, 
+    transparent
+  );
+  z-index: 1;
+  background-size: 20px 20px;
+  animation: move-stripes-mini 1.5s linear infinite;
+  border-radius: 9999px;
+}
+
+@keyframes move-stripes-mini {
+  0% { background-position: 0 0; }
+  100% { background-position: 20px 0; }
+}
+
+.miniProgressMeta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  gap: 4px;
+}
+
+.miniProgressStep {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 90px;
+  color: var(--color-text-muted);
+}
+

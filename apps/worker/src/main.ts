@@ -3,6 +3,8 @@ import IORedis from "ioredis";
 import dotenv from "dotenv";
 import path from "path";
 
+import { FontProcessor } from "./processors/font-processor";
+
 // Load workspace environment variables
 dotenv.config({ path: path.join(__dirname, "../../../.env") });
 
@@ -21,15 +23,16 @@ connection.on("error", (err) => {
   console.error("[Worker] Redis connection error:", err);
 });
 
-// Setup mock worker for font processing
+// Setup worker for font processing
 const worker = new Worker(
   "font-processing",
   async (job) => {
     console.log(`[Worker] Processing job ${job.id} - data:`, job.data);
-    // Processing logic goes here in Phase 6
+    const { fontId, filePath, originalFilename } = job.data;
+    await FontProcessor.processFont(fontId, filePath, originalFilename);
     return { success: true };
   },
-  { connection }
+  { connection: connection as any }
 );
 
 worker.on("completed", (job) => {

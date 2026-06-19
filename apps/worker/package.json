@@ -8,13 +8,17 @@
     "start": "node dist/main.js"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1073.0",
+    "@prisma/client": "^5.22.0",
     "bullmq": "^5.4.1",
     "dotenv": "^16.4.5",
-    "ioredis": "^5.3.2"
+    "ioredis": "^5.3.2",
+    "ttf2woff2": "^8.0.1"
   },
   "devDependencies": {
     "@types/node": "^20.11.24",
     "nodemon": "^3.1.0",
+    "prisma": "^5.22.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3"
   }

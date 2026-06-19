@@ -1,0 +1,116 @@
+.container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background-color: var(--color-bg-secondary);
+  padding: var(--spacing-md);
+}
+
+.card {
+  background-color: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: var(--spacing-2xl);
+  max-width: 420px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.titleArea {
+  text-align: center;
+}
+
+.title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.desc {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.input {
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  outline: none;
+  font-size: 0.95rem;
+  background-color: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  transition: all 0.2s;
+}
+
+.input:focus {
+  border-color: var(--color-accent);
+  background-color: var(--color-bg-primary);
+}
+
+.submitBtn {
+  background-color: var(--color-accent);
+  color: var(--color-text-on-accent);
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-top: var(--spacing-sm);
+  text-align: center;
+}
+
+.submitBtn:hover:not(:disabled) {
+  background-color: var(--color-accent-hover);
+}
+
+.submitBtn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.errorBox {
+  background-color: #fef2f2;
+  border: 1px solid #fee2e2;
+  color: #991b1b;
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.backHome {
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  font-weight: 600;
+  transition: color 0.2s;
+}
+
+.backHome:hover {
+  color: var(--color-accent);
+}

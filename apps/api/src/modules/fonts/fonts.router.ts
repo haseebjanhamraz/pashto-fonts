@@ -79,4 +79,8 @@ router.get("/:slug", async (req: Request, res: Response) => {
   }
 });
 
+// GET /api/fonts/:slug/download is handled by downloadsRouter
+import { downloadsRouter } from "../downloads/downloads.router";
+router.use("/", downloadsRouter);
+
 export const fontsRouter = router;

@@ -1,7 +1,19 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import styles from "./Header.module.css";
 
 export default function Header() {
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("adminUser");
+    if (stored) {
+      setIsAdmin(true);
+    }
+  }, []);
+
   return (
     <header className={styles.header}>
       <div className={styles.container}>
@@ -28,7 +40,7 @@ export default function Header() {
         </nav>
 
         <div>
-          <Link href="/admin/login" className={styles.ctaButton}>
+          <Link href={isAdmin ? "/admin/dashboard" : "/admin/login"} className={styles.ctaButton}>
             اداري تخته
           </Link>
         </div>
