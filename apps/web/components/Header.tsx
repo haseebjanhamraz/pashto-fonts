@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n/useLanguage";
 import styles from "./Header.module.css";
+import Image from "next/image";
 
 export default function Header() {
   const { language, setLanguage, t } = useLanguage();
@@ -20,11 +21,13 @@ export default function Header() {
     <header className={styles.header}>
       <div className={styles.container}>
         <div className={styles.logoArea}>
-          <Link href="/" className={styles.logoTitle}>
-            {t("common.logoTitle")}
-          </Link>
-          <span className={styles.logoBadge}>PRO</span>
+          <div className={styles.logoImage}>
+            <Link href="/">
+              <Image src="/wide-logo.png" alt="Logo" width={130} height={50} />
+            </Link>
+          </div>
         </div>
+
 
         <nav className={styles.navLinks}>
           <Link href="/" className={styles.navLink}>
@@ -49,7 +52,7 @@ export default function Header() {
           >
             {language === "en" ? "پښتو" : "English"}
           </button>
-          
+
           <Link href={isAdmin ? "/admin/dashboard" : "/admin/login"} className={styles.ctaButton}>
             {t("common.adminPanel")}
           </Link>

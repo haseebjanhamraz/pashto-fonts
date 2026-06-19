@@ -10,6 +10,10 @@ body {
   min-height: 100vh;
 }
 
+.logoImage img {
+  width: 50px
+}
+
 /* Global utility classes */
 .container {
   width: 100%;
