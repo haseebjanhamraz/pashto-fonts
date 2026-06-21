@@ -238,6 +238,19 @@
   color: var(--color-accent);
 }
 
+.downloadCssBtn {
+  background-color: var(--color-accent);
+  color: var(--color-text-on-accent);
+  border-color: var(--color-accent);
+}
+
+.downloadCssBtn:hover {
+  background-color: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+  color: var(--color-text-on-accent);
+}
+
+
 @media (max-width: 768px) {
   .headerSection {
     flex-direction: column;
