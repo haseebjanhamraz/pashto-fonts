@@ -11,6 +11,7 @@ COPY apps/api ./apps/api
 RUN npm run build --workspace=packages/shared
 RUN npx prisma generate --schema=apps/api/prisma/schema.prisma
 RUN npm run build --workspace=apps/api
+RUN npx tsc apps/api/prisma/seed.ts apps/api/prisma/seed-admin.ts apps/api/prisma/seed-bahij.ts --outDir apps/api/dist/prisma --target es2020 --module commonjs --moduleResolution node --esModuleInterop
 
 FROM node:20-alpine
 RUN apk add --no-cache openssl
