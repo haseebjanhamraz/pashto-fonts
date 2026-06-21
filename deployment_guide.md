@@ -65,7 +65,7 @@ S3_ACCESS_KEY_ID=your-r2-access-key-id
 S3_SECRET_ACCESS_KEY=your-r2-secret-access-key
 S3_BUCKET=pashto-fonts-prod
 S3_REGION=auto
-S3_PUBLIC_URL=https://cdn.pashtofonts.com # Or R2 public url
+S3_PUBLIC_BASE_URL=https://cdn.pashtofonts.com # Or R2 public url
 ```
 
 ---

@@ -15,7 +15,7 @@ RUN npm run build --workspace=apps/worker
 
 FROM node:20-alpine
 # Install Python, pip and fonttools
-RUN apk add --no-cache python3 py3-pip && \
+RUN apk add --no-cache python3 py3-pip openssl && \
     ln -sf python3 /usr/bin/python
 RUN pip install --no-cache-dir fonttools --break-system-packages
 
