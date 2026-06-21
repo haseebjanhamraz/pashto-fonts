@@ -88,7 +88,7 @@ Run migrations and seeds directly inside the API container to initialize schemas
 docker exec -it pashto-fonts-api-prod npm run db:migrate
 docker exec -it pashto-fonts-api-prod npm run db:seed
 # Seed admin account (admin@pashtofonts.com / admin123)
-docker exec -it pashto-fonts-api-prod npx ts-node prisma/seed-admin.ts
+docker exec -it pashto-fonts-api-prod node apps/api/dist/prisma/seed-admin.js
 ```
 
 ---
