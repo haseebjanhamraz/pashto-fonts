@@ -63,7 +63,7 @@ NEXT_PUBLIC_SITE_URL=https://pashtofonts.com
 S3_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
 S3_ACCESS_KEY_ID=your-r2-access-key-id
 S3_SECRET_ACCESS_KEY=your-r2-secret-access-key
-S3_BUCKET_NAME=pashto-fonts-prod
+S3_BUCKET=pashto-fonts-prod
 S3_REGION=auto
 S3_PUBLIC_URL=https://cdn.pashtofonts.com # Or R2 public url
 ```

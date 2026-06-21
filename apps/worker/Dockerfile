@@ -9,8 +9,8 @@ RUN npm ci
 COPY packages/shared ./packages/shared
 COPY apps/worker ./apps/worker
 RUN npm run build --workspace=packages/shared
-RUN npm run build --workspace=apps/worker
 RUN npx prisma generate --schema=apps/api/prisma/schema.prisma
+RUN npm run build --workspace=apps/worker
 
 FROM node:20-alpine
 # Install Python, pip and fonttools

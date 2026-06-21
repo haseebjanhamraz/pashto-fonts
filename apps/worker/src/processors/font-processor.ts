@@ -6,7 +6,7 @@ import crypto from "crypto";
 import ttf2woff2 from "ttf2woff2";
 import { prisma } from "../utils/db";
 import { StorageService } from "../services/storage";
-import { FontStatus, FontFormat, FontStyle } from "@prisma/client";
+import { FontStatus, FontFormat, FontStyle, Prisma } from "@prisma/client";
 import { redis } from "../utils/redis";
 
 const execPromise = util.promisify(exec);
@@ -124,7 +124,7 @@ export class FontProcessor {
 
       // 5. Update Font metadata and set status to DRAFT
       console.log(`[FontProcessor] Updating database metadata...`);
-      await prisma.$transaction(async (tx) => {
+      await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
         // Update font main attributes
         await tx.font.update({
           where: { id: fontId },

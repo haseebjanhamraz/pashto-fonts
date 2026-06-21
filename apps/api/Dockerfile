@@ -8,8 +8,8 @@ RUN npm ci
 COPY packages/shared ./packages/shared
 COPY apps/api ./apps/api
 RUN npm run build --workspace=packages/shared
-RUN npm run build --workspace=apps/api
 RUN npx prisma generate --schema=apps/api/prisma/schema.prisma
+RUN npm run build --workspace=apps/api
 
 FROM node:20-alpine
 WORKDIR /app
