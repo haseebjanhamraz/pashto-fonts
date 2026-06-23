@@ -227,6 +227,11 @@ export default function AdminFontsListPage() {
         headers: getAuthHeaders(),
         credentials: "include",
       });
+      if (res.status === 401) {
+        localStorage.removeItem("adminUser");
+        router.push("/admin/login");
+        return;
+      }
       const result = await res.json();
       if (!res.ok || !result.success) throw new Error(result.error?.message || t("common.error"));
       setFonts(result.data);

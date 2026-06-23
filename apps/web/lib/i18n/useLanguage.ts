@@ -4,7 +4,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { en } from "./dictionaries/en";
 import { ps } from "./dictionaries/ps";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 export type Language = "en" | "ps";
 
@@ -38,7 +38,7 @@ export function useLanguage() {
     setMounted(true);
   }, []);
 
-  const t = (path: string): string => {
+  const t = useCallback((path: string): string => {
     const keys = path.split(".");
     // Use "en" during SSR and before mounting to avoid hydration warnings
     const activeLang = mounted ? language : "en";
@@ -52,7 +52,7 @@ export function useLanguage() {
       }
     }
     return typeof current === "string" ? current : path;
-  };
+  }, [mounted, language]);
 
   const isRtl = mounted ? language === "ps" : false;
 

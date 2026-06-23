@@ -211,6 +211,12 @@ export default function AdminFontUploadPage() {
         credentials: "include",
       });
 
+      if (res.status === 401) {
+        localStorage.removeItem("adminUser");
+        router.push("/admin/login");
+        return;
+      }
+
       const result = await res.json();
 
       if (!res.ok && !result.data) {

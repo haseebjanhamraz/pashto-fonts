@@ -65,6 +65,12 @@ export default function EditFontPage() {
           credentials: "include",
         });
 
+        if (fontRes.status === 401) {
+          localStorage.removeItem("adminUser");
+          router.push("/admin/login");
+          return;
+        }
+
         const fontData = await fontRes.json();
         if (!fontRes.ok || !fontData.success) {
           throw new Error(fontData.error?.message || t("common.error"));
